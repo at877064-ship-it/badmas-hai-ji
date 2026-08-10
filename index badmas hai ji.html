@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090a0b">
+<meta name="description" content="BADMAS HAI JI — private jukebox">
+<title>BADMAS HAI JI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--steel-1:#3a3d40;--steel-2:#1c1e20;--steel-3:#0a0b0c;--amber:#d9a441;--amber-dim:#8a6a2c;--cream:#e9e6df;--line:rgba(233,230,223,.12);--danger:#c0453a}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:'Rajdhani',sans-serif;background:#050506;color:var(--cream)}
+body{overflow-x:hidden}
+button,input{font:inherit}
+button{color:inherit}
+#lock{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at center,#1b1c1d 0%,#050506 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;color:var(--cream);transition:opacity .5s,visibility .5s;padding:20px}
+#lock.hidden{opacity:0;visibility:hidden;pointer-events:none}
+#lock h1{font-family:'Bebas Neue';font-size:clamp(2.1rem,8vw,3.4rem);letter-spacing:4px;margin:0;color:var(--amber);text-align:center}
+#lock p{opacity:.6;margin:0 0 6px;font-size:1rem;letter-spacing:1px;text-align:center}
+#lock input{background:#141516;border:1px solid #3a3d40;color:var(--cream);padding:12px 16px;border-radius:3px;font-size:1.1rem;width:240px;text-align:center;letter-spacing:3px;outline:none}
+#lock input:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(217,164,65,.08)}
+#lock button{background:linear-gradient(180deg,#4a4d50,#232527);border:1px solid #5a5d60;color:var(--amber);font-weight:700;font-size:1rem;padding:12px 30px;border-radius:3px;cursor:pointer;letter-spacing:2px;text-transform:uppercase}
+#lock button:active{transform:translateY(1px)}
+#lockError{color:var(--danger);font-size:.85rem;height:14px}
+#scene{position:fixed;inset:0;z-index:-2;background:radial-gradient(ellipse at 50% 30%,#2a2b2c 0%,#101112 55%,#050506 100%)}
+.fabric{position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px),repeating-linear-gradient(25deg,rgba(0,0,0,.25) 0 1px,transparent 1px 4px)}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 30%,rgba(0,0,0,.72) 100%)}
+.rail{position:absolute;background:repeating-linear-gradient(90deg,rgba(233,230,223,.06) 0 2px,transparent 2px 10px)}
+#rail1{top:8%;left:-5%;width:60%;height:14px;transform:rotate(-7deg)}
+#rail2{bottom:12%;right:-5%;width:55%;height:14px;transform:rotate(6deg)}
+.bolt{position:absolute;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#cfd2d4,#55585a 70%);box-shadow:0 0 4px rgba(0,0,0,.6)}
+.hud-corner{position:absolute;width:26px;height:26px;border-color:var(--amber-dim);opacity:.55}
+.hud-corner.tl{top:22px;left:22px;border-top:2px solid;border-left:2px solid}.hud-corner.tr{top:22px;right:22px;border-top:2px solid;border-right:2px solid}.hud-corner.bl{bottom:22px;left:22px;border-bottom:2px solid;border-left:2px solid}.hud-corner.br{bottom:22px;right:22px;border-bottom:2px solid;border-right:2px solid}
+#headline{position:relative;text-align:center;z-index:5;width:92%;margin:9vh auto 20px}
+#headline h1{margin:0;font-family:'Bebas Neue';font-size:clamp(3rem,10vw,6.6rem);line-height:.95;color:var(--cream);letter-spacing:6px;text-shadow:0 2px 0 #000,0 0 26px rgba(217,164,65,.25),0 14px 30px rgba(0,0,0,.6)}
+#headline .rule{width:120px;height:2px;margin:10px auto 12px;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
+#headline .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(10,11,12,.6);border:1px solid rgba(217,164,65,.4);color:var(--amber);padding:6px 16px;border-radius:2px;font-size:.8rem;letter-spacing:3px;text-transform:uppercase;backdrop-filter:blur(3px)}
+.dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80}
+#soundBadge{position:fixed;top:36%;left:50%;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:12px;background:rgba(217,164,65,.14);border:1px solid rgba(217,164,65,.55);border-radius:999px;padding:8px 22px 8px 10px;cursor:pointer;backdrop-filter:blur(4px);box-shadow:0 0 0 1px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.4);transition:.15s}
+#soundBadge:hover{background:rgba(217,164,65,.22)}#soundBadge:active{transform:translateX(-50%) scale(.97)}
+#soundIcon{width:34px;height:34px;border-radius:50%;background:rgba(217,164,65,.25);display:flex;align-items:center;justify-content:center;flex:none}
+#soundIcon svg{width:19px;height:19px;fill:var(--cream)}
+.soundText{display:flex;flex-direction:column;line-height:1.15;text-align:left}.soundText .hi{font-weight:700;font-size:1.15rem}.soundText .en{font-family:'Bebas Neue';font-size:.8rem;letter-spacing:3px;color:var(--amber)}
+#plBtn{position:fixed;top:24px;right:24px;z-index:20;background:linear-gradient(180deg,#3a3d40,#1c1e20);border:1px solid #4a4d50;color:var(--cream);width:46px;height:46px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#plBtn svg{width:20px;height:20px;fill:var(--amber)}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,90vw);background:rgba(10,11,12,.97);border-left:1px solid #333;z-index:40;transform:translateX(100%);transition:transform .35s;display:flex;flex-direction:column;backdrop-filter:blur(8px)}
+#drawer.open{transform:translateX(0)}
+#drawer header{padding:20px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #262728}
+#drawer header h2{margin:0;color:var(--amber);font-family:'Bebas Neue';font-size:1.5rem;letter-spacing:2px}
+#drawer header button{background:none;border:none;color:var(--cream);font-size:1.4rem;cursor:pointer}
+#tracklist{overflow-y:auto;flex:1;padding:8px 0}.track{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;border-bottom:1px solid #1c1d1e;color:var(--cream)}
+.track:hover,.track.active{background:rgba(217,164,65,.1)}.track .num{width:24px;color:var(--amber);font-weight:700;font-family:'Teko'}
+.track .meta{flex:1;min-width:0}.track .name,.track .artist{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track .name{font-size:.98rem;font-weight:600}.track .artist{font-size:.75rem;opacity:.55}
+.uploadBtn{background:rgba(217,164,65,.12);border:1px solid rgba(217,164,65,.4);color:var(--amber);font-size:.68rem;padding:5px 9px;border-radius:2px;cursor:pointer}
+#drawer footer{padding:14px 18px;font-size:.72rem;color:rgba(233,230,223,.4);border-top:1px solid #1c1d1e;line-height:1.4}
+#player{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:30;width:min(700px,94vw);background:linear-gradient(160deg,#3f4245,#212325 55%,#131415);border:1px solid #4a4d50;border-radius:8px;display:flex;align-items:center;gap:14px;padding:10px 18px 10px 10px;box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
+#art{width:56px;height:56px;border-radius:6px;flex:none;background:radial-gradient(circle at 35% 35%,#2a2c2d,#0a0b0c 70%);border:2px solid #55585a;display:flex;align-items:center;justify-content:center;position:relative;animation:spin 6s linear infinite paused}
+#art.spin{animation-play-state:running}@keyframes spin{to{transform:rotate(360deg)}}#art:after{content:'';width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid #0a0b0c}
+#meta{flex:1;min-width:0}.title,.artist{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:700;font-size:1rem}.artist{font-size:.8rem;opacity:.6}
+#progressRow{display:flex;align-items:center;gap:8px;margin-top:5px}#progress{appearance:none;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(233,230,223,.15);flex:1;cursor:pointer}#progress::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--amber)}#time{font-size:.7rem;opacity:.55;white-space:nowrap}
+#controls{display:flex;align-items:center;gap:6px;flex:none}#controls button{background:none;border:none;cursor:pointer;width:34px;height:34px;display:flex;align-items:center;justify-content:center}#controls svg{width:18px;height:18px;fill:var(--cream)}
+#playBtn{width:46px!important;height:46px!important;border-radius:50%;background:linear-gradient(180deg,var(--amber),#a67a2e);box-shadow:0 3px 8px rgba(0,0,0,.4)}#playBtn svg{width:20px;height:20px;fill:#141516}
+#toast{position:fixed;left:50%;bottom:105px;transform:translate(-50%,15px);z-index:80;background:#141516;border:1px solid #45484a;color:var(--cream);padding:9px 14px;border-radius:4px;opacity:0;pointer-events:none;transition:.25s;font-size:.85rem}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:560px){#headline{margin-top:8vh}#soundBadge{top:35%}#player{bottom:10px;padding:8px 10px 8px 8px;gap:8px}#art{width:46px;height:46px}#meta .title{font-size:.88rem}#controls{gap:1px}#controls button:not(#playBtn){display:none}#playBtn{width:42px!important;height:42px!important}}
+</style>
+</head>
+<body>
+<div id="lock">
+  <h1>BADMAS HAI JI</h1>
+  <p>Private jukebox — enter the code to get in</p>
+  <input id="lockInput" type="password" placeholder="• • • •" maxlength="20" autocomplete="off">
+  <div id="lockError"></div><button id="lockBtn">Unlock</button>
+</div>
+
+<div id="scene"><div class="fabric"></div><div class="rail" id="rail1"></div><div class="rail" id="rail2"></div>
+<div class="bolt" style="top:20%;left:12%"></div><div class="bolt" style="top:30%;left:85%"></div><div class="bolt" style="bottom:18%;left:20%"></div><div class="bolt" style="bottom:28%;right:16%"></div>
+<div class="vignette"></div><div class="hud-corner tl"></div><div class="hud-corner tr"></div><div class="hud-corner bl"></div><div class="hud-corner br"></div></div>
+
+<button id="soundBadge" title="Upload and play a sound">
+<span id="soundIcon"><svg viewBox="0 0 24 24"><path d="M2 13.5h9.5V12H15v-1.2c0-.7.6-1.3 1.3-1.3H19c1.1 0 2 .9 2 2v1c0 .8-.5 1.5-1.2 1.8l-2.3.9v1.3c0 .5-.4 1-1 1H12v1.5c0 .5-.4 1-1 1H8.5v-2.5H6c-.8 0-1.5-.3-2-.9L2 15v-1.5z"/><rect x="10.5" y="9.3" width="2" height="2.7"/></svg></span>
+<span class="soundText"><span class="hi">बदमाश</span><span class="en">BADMAS</span></span>
+<input type="file" id="soundFile" accept="audio/*" hidden></button>
+<audio id="badgeAudio"></audio>
+
+<div id="headline"><h1>BADMAS HAI JI</h1><div class="rule"></div><div class="badge"><span class="dot"></span><span>PRIVATE JUKEBOX</span></div></div>
+
+<button id="plBtn" title="Open playlist" aria-label="Open playlist"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg></button>
+
+<div id="drawer" aria-hidden="true">
+<header><h2>PLAYLIST</h2><button id="closeDrawer" aria-label="Close playlist">×</button></header>
+<div id="tracklist"></div>
+<footer>Upload audio files from your device to play them locally. Files are not sent anywhere by this page.</footer>
+</div>
+
+<div id="player">
+<div id="art"></div>
+<div id="meta"><div class="title" id="trackTitle">No track selected</div><div class="artist" id="trackArtist">Upload a song to begin</div>
+<div id="progressRow"><input id="progress" type="range" min="0" max="100" value="0"><span id="time">0:00 / 0:00</span></div></div>
+<div id="controls">
+<button id="prevBtn" title="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zm3 7 10-7v14z"/></svg></button>
+<button id="playBtn" title="Play/Pause"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+<button id="nextBtn" title="Next"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+</div></div>
+
+<div id="toast"></div>
+<script>
+const PASSCODE="badmas";
+const $=id=>document.getElementById(id);
+const lock=$("lock"), input=$("lockInput"), error=$("lockError");
+function unlock(){if(input.value.trim().toLowerCase()===PASSCODE){lock.classList.add("hidden");sessionStorage.setItem("badmas_unlocked","1")}else{error.textContent="That's not it — try again";input.select()}}
+$("lockBtn").onclick=unlock;input.onkeydown=e=>{if(e.key==="Enter")unlock()};if(sessionStorage.getItem("badmas_unlocked")==="1")lock.classList.add("hidden");
+
+const audio=$("badgeAudio"), soundFile=$("soundFile"), soundBadge=$("soundBadge");let badgeUrl=null;
+soundBadge.addEventListener("click",e=>{if(e.target===soundFile)return;if(badgeUrl){audio.currentTime=0;audio.play().catch(()=>{})}else soundFile.click()});
+soundFile.onchange=e=>{const f=e.target.files[0];if(!f)return;if(badgeUrl)URL.revokeObjectURL(badgeUrl);badgeUrl=URL.createObjectURL(f);audio.src=badgeUrl;audio.play().catch(()=>{});showToast("Playing "+f.name)};
+
+const drawer=$("drawer");$("plBtn").onclick=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false")};$("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true")};
+
+const tracks=[];let current=-1;const playerAudio=new Audio();
+function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function showToast(t){const x=$("toast");x.textContent=t;x.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>x.classList.remove("show"),1800)}
+function renderTracks(){const list=$("tracklist");list.innerHTML="";if(!tracks.length){list.innerHTML='<div style="padding:25px 18px;opacity:.55;text-align:center">No local tracks yet.<br>Use “ADD SONG” below.</div>'}
+tracks.forEach((t,i)=>{const el=document.createElement("div");el.className="track"+(i===current?" active":"");el.innerHTML='<div class="num">'+String(i+1).padStart(2,"0")+'</div><div class="meta"><div class="name"></div><div class="artist">LOCAL AUDIO</div></div>';el.querySelector(".name").textContent=t.name;el.onclick=()=>loadTrack(i,true);list.appendChild(el)});
+const add=document.createElement("div");add.style.cssText="padding:16px 18px";add.innerHTML='<label class="uploadBtn" style="display:block;text-align:center;padding:10px">＋ ADD SONGS<input id="playlistFiles" type="file" accept="audio/*" multiple hidden></label>';list.appendChild(add);$("playlistFiles").onchange=e=>{[...e.target.files].forEach(f=>tracks.push({name:f.name,url:URL.createObjectURL(f)}));renderTracks();if(current<0)loadTrack(0,false);showToast("Songs added")}}
+function loadTrack(i,autoplay){if(i<0||i>=tracks.length)return;current=i;playerAudio.src=tracks[i].url;$("trackTitle").textContent=tracks[i].name;$("trackArtist").textContent="LOCAL AUDIO";$("progress").value=0;renderTracks();if(autoplay)playerAudio.play().catch(()=>{})}
+function updatePlayIcon(){ $("playIcon").innerHTML=playerAudio.paused?'<path d="M8 5v14l11-7z"/>':'<path d="M7 5h4v14H7zm6 0h4v14h-4z"/>'; $("art").classList.toggle("spin",!playerAudio.paused)}
+$("playBtn").onclick=()=>{if(current<0){if(tracks.length)loadTrack(0,true);else{renderTracks();$("drawer").classList.add("open");showToast("Add a song first")}}else playerAudio.paused?playerAudio.play():playerAudio.pause()};
+$("prevBtn").onclick=()=>{if(tracks.length)loadTrack((current-1+tracks.length)%tracks.length,true)};$("nextBtn").onclick=()=>{if(tracks.length)loadTrack((current+1)%tracks.length,true)};
+playerAudio.addEventListener("play",updatePlayIcon);playerAudio.addEventListener("pause",updatePlayIcon);playerAudio.addEventListener("ended",()=>{if(tracks.length)loadTrack((current+1)%tracks.length,true)});
+playerAudio.addEventListener("timeupdate",()=>{$("progress").value=playerAudio.duration?(playerAudio.currentTime/playerAudio.duration)*100:0;$("time").textContent=formatTime(playerAudio.currentTime)+" / "+formatTime(playerAudio.duration)});
+$("progress").oninput=e=>{if(playerAudio.duration)playerAudio.currentTime=(e.target.value/100)*playerAudio.duration};
+renderTracks();
+</script>
+</body>
+</html>
