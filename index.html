@@ -309,7 +309,14 @@ $("prevBtn").onclick = () => {
   $("art").classList.add("spin");
   updatePlayBtn(true);
 };
-
+playerAudio.onended = () => {
+  if (tracks.length === 0) return;
+  current = (current + 1) % tracks.length;
+  loadTrack(current);
+  playerAudio.play();
+  $("art").classList.add("spin");
+  updatePlayBtn(true);
+};
 function showToast(msg) {
   const t = $("toast");
   t.textContent = msg;
