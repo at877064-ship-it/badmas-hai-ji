@@ -116,15 +116,14 @@ button{color:inherit}
 <div id="toast"></div>
 
 <script>
+function $(id){return document.getElementById(id)}
 let current = -1;
 const playerAudio = $("playerAudio");
 
 const PASSCODE="badmas";
-function $(id){return document.getElementById(id)}
 const lock=$("lock"), input=$("lockInput"), error=$("lockError");
 function unlock(){if(input.value.trim().toLowerCase()===PASSCODE){lock.classList.add("hidden");sessionStorage.setItem("badmas_unlocked","1")}else{error.textContent="That's not it — try again";input.select()}}
 $("lockBtn").onclick=unlock;input.onkeydown=e=>{if(e.key==="Enter")unlock()};if(sessionStorage.getItem("badmas_unlocked")==="1")lock.classList.add("hidden");
-
 const audio=$("badgeAudio"), soundFile=$("soundFile"), soundBadge=$("soundBadge");let badgeUrl=null;
 soundBadge.addEventListener("click",e=>{if(e.target===soundFile)return;if(badgeUrl){audio.currentTime=0;audio.play().catch(()=>{})}else soundFile.click()});
 soundFile.onchange=e=>{const f=e.target.files[0];if(!f)return;if(badgeUrl)URL.revokeObjectURL(badgeUrl);badgeUrl=URL.createObjectURL(f);audio.src=badgeUrl;audio.play().catch(()=>{});showToast("Playing "+f.name)};
