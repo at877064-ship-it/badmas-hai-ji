@@ -11,8 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--steel-1:#3a3d40;--steel-2:#1c1e20;--steel-3:#0a0b0c;--amber:#d9a441;--amber-dim:#8a6a2c;--cream:#e9e6df;--line:rgba(233,230,223,.12);--danger:#c0453a}
-html,body{origin:0;min-height:100%;font-family:'Rajdhani',sans-serif;background:url('bg.jpg') no-repeat center center fixed;background-size:cover;color:var(--cream)}
-html,body{margin:0;min-height:100%;font-family:'Rajdhani',sans-serif;background:#050506;color:var(--cream)}
+html,body{margin:0;min-height:100%;font-family:'Rajdhani',sans-serif;background:url('bg.jpg') no-repeat center center fixed;background-size:cover;color:var(--cream)}
 body{overflow-x:hidden}
 button,input{font:inherit}
 button{color:inherit}
@@ -25,7 +24,7 @@ button{color:inherit}
 #lock button{background:linear-gradient(180deg,#4a4d50,#232527);border:1px solid #5a5d60;color:var(--amber);font-weight:700;font-size:1rem;padding:12px 30px;border-radius:3px;cursor:pointer;letter-spacing:2px;text-transform:uppercase}
 #lock button:active{transform:translateY(1px)}
 #lockError{color:var(--danger);font-size:.85rem;height:14px}
-#scene{position:fixed;inset:0;z-index:-2;background:radial-gradient(ellipse at 50% 30%,#2a2b2c 0%,#101112 55%,#050506 100%)}
+#scene{position:fixed;inset:0;z-index:-2;background:radial-gradient(ellipse at 50% 30%,rgba(42,43,44,.8) 0%,rgba(16,17,18,.9) 55%,rgba(5,5,6,.95) 100%)}
 .fabric{position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px),repeating-linear-gradient(25deg,rgba(0,0,0,.25) 0 1px,transparent 1px 4px)}
 .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 30%,rgba(0,0,0,.72) 100%)}
 .rail{position:absolute;background:repeating-linear-gradient(90deg,rgba(233,230,223,.06) 0 2px,transparent 2px 10px)}
@@ -35,7 +34,7 @@ button{color:inherit}
 .hud-corner{position:absolute;width:26px;height:26px;border-color:var(--amber-dim);opacity:.55}
 .hud-corner.tl{top:22px;left:22px;border-top:2px solid;border-left:2px solid}.hud-corner.tr{top:22px;right:22px;border-top:2px solid;border-right:2px solid}.hud-corner.bl{bottom:22px;left:22px;border-bottom:2px solid;border-left:2px solid}.hud-corner.br{bottom:22px;right:22px;border-bottom:2px solid;border-right:2px solid}
 #headline{position:relative;text-align:center;z-index:5;width:92%;margin:9vh auto 20px}
-#headline h1{margin:0;font-family:'Bebas Neue';font-size:clamp(3rem,10vw,6.6rem);line-height:.95;color:var(--cream);letter-spacing:6px;text-shadow:0 2px 0 #000,0 0 26px rgba(217,164,65,.25),0 14px 30px rgba(0,0,0,.6)}
+#headline h1{margin:0;font-family:'Bebas Neue';font-size:clamp(2.5rem,8vw,5rem);line-height:.95;color:var(--cream);letter-spacing:4px;text-shadow:0 2px 0 #000,0 0 26px rgba(217,164,65,.25),0 14px 30px rgba(0,0,0,.6)}
 #headline .rule{width:120px;height:2px;margin:10px auto 12px;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
 #headline .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(10,11,12,.6);border:1px solid rgba(217,164,65,.4);color:var(--amber);padding:6px 16px;border-radius:2px;font-size:.8rem;letter-spacing:3px;text-transform:uppercase;backdrop-filter:blur(3px)}
 .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80}
@@ -85,14 +84,22 @@ button{color:inherit}
 <span class="soundText"><span class="hi">बदमाश</span><span class="en">BADMAS</span></span>
 <input type="file" id="soundFile" accept="audio/*" hidden></button>
 <audio id="badgeAudio"></audio>
+<audio id="playerAudio"></audio>
 
-<div id="headline"><h1>BADMAS HAI JI</h1><div class="rule"></div><div class="badge"><span class="dot"></span><span>PRIVATE JUKEBOX</span></div></div>
-<button id="p1Btn" class="pl-btn" title="Open playlist">BADMAS HAI JI • BY THAKUR ADITYA</button>
+<div id="headline">
+  <h1>BADMAS HAI JI • BY THAKUR ADITYA</h1>
+  <div class="rule"></div>
+  <div class="badge"><span class="dot"></span><span>PRIVATE JUKEBOX</span></div>
+</div>
+
 <button id="plBtn" title="Open playlist" aria-label="Open playlist"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg></button>
 
 <div id="drawer" aria-hidden="true">
-<h2>THAKUR ADITYA'S PLAYLIST</h2>
-<div id="tracklist"></div>
+  <header>
+    <h2>THAKUR ADITYA'S PLAYLIST</h2>
+    <button id="closeDrawer">✕</button>
+  </header>
+  <div id="tracklist"></div>
   <footer>Created with ❤️ by Thakur Aditya</footer>
 </div>
 
@@ -107,9 +114,13 @@ button{color:inherit}
 </div></div>
 
 <div id="toast"></div>
+
 <script>
+let current = -1;
+const playerAudio = $("playerAudio");
+
 const PASSCODE="badmas";
-const $=id=>document.getElementById(id);
+function $(id){return document.getElementById(id)}
 const lock=$("lock"), input=$("lockInput"), error=$("lockError");
 function unlock(){if(input.value.trim().toLowerCase()===PASSCODE){lock.classList.add("hidden");sessionStorage.setItem("badmas_unlocked","1")}else{error.textContent="That's not it — try again";input.select()}}
 $("lockBtn").onclick=unlock;input.onkeydown=e=>{if(e.key==="Enter")unlock()};if(sessionStorage.getItem("badmas_unlocked")==="1")lock.classList.add("hidden");
@@ -118,9 +129,13 @@ const audio=$("badgeAudio"), soundFile=$("soundFile"), soundBadge=$("soundBadge"
 soundBadge.addEventListener("click",e=>{if(e.target===soundFile)return;if(badgeUrl){audio.currentTime=0;audio.play().catch(()=>{})}else soundFile.click()});
 soundFile.onchange=e=>{const f=e.target.files[0];if(!f)return;if(badgeUrl)URL.revokeObjectURL(badgeUrl);badgeUrl=URL.createObjectURL(f);audio.src=badgeUrl;audio.play().catch(()=>{});showToast("Playing "+f.name)};
 
-const drawer=$("drawer");$("plBtn").onclick=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false")};$("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true")};
+const drawer=$("drawer");
+$("plBtn").onclick=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false")};
+$("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true")};
+
 function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
-  const tracks = [
+
+const tracks = [
   { title: "2 Dada Part 2", artist: "Masoom Sharma", url: "2_Dada_-_Part_2__Full_Video___Masoom_Sharma_New_Song___Shivani_Yadav___New_Haryanvi_Song_2024(0).mp3" },
   { title: "2 Dada Lyrical", artist: "Masoom Sharma", url: "2_Dada__Lyrical_Video____MASOOM_SHARMA_ft._Khushi_Baliyan__Manjeet_M_Ashu_T__New_Haryanvi_Song_2023(0).mp3" },
   { title: "2 Dada", artist: "Masoom Sharma", url: "2_Dada___MASOOM_SHARMA_ft._Khushi_Baliyan__Manjeet_M_Ashu_T__New_Haryanvi_Song_2023(0).mp3" },
@@ -155,18 +170,41 @@ function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));
   { title: "Sarkara Mein Hold", artist: "Hammy Muzic", url: "Sarkara_Mein_Hold_Hammy_Muzic___Syphr___New_Haryanvi_Song_2024_Latest_Haryanvi_Song_2024(360p)(1).mp3" },
   { title: "Pistol Gel Beretta", artist: "Aman Rajgil", url: "Pistol_gel_beretta_ki_gadi_bin_number_pleta_ki_#beretta_#amanrajgil_#trendingshorts_#haryanvimusic(256k).mp3" }
 ];
+
 function showToast(t){const x=$("toast");x.textContent=t;x.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>x.classList.remove("show"),1800)}
-function renderTracks(){const list=$("tracklist");list.innerHTML="";if(!tracks.length){list.innerHTML='<div style="padding:25px 18px;opacity:.55;text-align:center">No local tracks yet.<br>Use “ADD SONG” below.</div>'}
-tracks.forEach((t,i)=>{const el=document.createElement("div");el.className="track"+(i===current?" active":"");el.innerHTML='<div class="num">'+String(i+1).padStart(2,"0")+'</div><div class="meta"><div class="name"></div><div class="artist">LOCAL AUDIO</div></div>';el.querySelector(".name").textContent=t.name;el.onclick=()=>loadTrack(i,true);list.appendChild(el)});
-const add=document.createElement("div");add.style.cssText="padding:16px 18px";add.innerHTML='<label class="uploadBtn" style="display:block;text-align:center;padding:10px">＋ ADD SONGS<input id="playlistFiles" type="file" accept="audio/*" multiple hidden></label>';list.appendChild(add);$("playlistFiles").onchange=e=>{[...e.target.files].forEach(f=>tracks.push({name:f.name,url:URL.createObjectURL(f)}));renderTracks();if(current<0)loadTrack(0,false);showToast("Songs added")}}
-function loadTrack(i,autoplay){if(i<0||i>=tracks.length)return;current=i;playerAudio.src=tracks[i].url;$("trackTitle").textContent=tracks[i].name;$("trackArtist").textContent="LOCAL AUDIO";$("progress").value=0;renderTracks();if(autoplay)playerAudio.play().catch(()=>{})}
-function updatePlayIcon(){ $("playIcon").innerHTML=playerAudio.paused?'<path d="M8 5v14l11-7z"/>':'<path d="M7 5h4v14H7zm6 0h4v14h-4z"/>'; $("art").classList.toggle("spin",!playerAudio.paused)}
-$("playBtn").onclick=()=>{if(current<0){if(tracks.length)loadTrack(0,true);else{renderTracks();$("drawer").classList.add("open");showToast("Add a song first")}}else playerAudio.paused?playerAudio.play():playerAudio.pause()};
-$("prevBtn").onclick=()=>{if(tracks.length)loadTrack((current-1+tracks.length)%tracks.length,true)};$("nextBtn").onclick=()=>{if(tracks.length)loadTrack((current+1)%tracks.length,true)};
-playerAudio.addEventListener("play",updatePlayIcon);playerAudio.addEventListener("pause",updatePlayIcon);playerAudio.addEventListener("ended",()=>{if(tracks.length)loadTrack((current+1)%tracks.length,true)});
-playerAudio.addEventListener("timeupdate",()=>{$("progress").value=playerAudio.duration?(playerAudio.currentTime/playerAudio.duration)*100:0;$("time").textContent=formatTime(playerAudio.currentTime)+" / "+formatTime(playerAudio.duration)});
-$("progress").oninput=e=>{if(playerAudio.duration)playerAudio.currentTime=(e.target.value/100)*playerAudio.duration};
-renderTracks();
-</script>
-</body>
-</html>
+
+function renderTracks(){
+  const list=$("tracklist");
+  list.innerHTML="";
+  if(!tracks.length){
+    list.innerHTML='<div style="padding:25px 18px;opacity:.55;text-align:center">No local tracks yet.</div>';
+    return;
+  }
+  tracks.forEach((t,i)=>{
+    const el=document.createElement("div");
+    el.className="track"+(i===current?" active":"");
+    el.innerHTML='<div class="num">'+String(i+1).padStart(2,"0")+'</div><div class="meta"><div class="name"></div><div class="artist"></div></div>';
+    el.querySelector(".name").textContent=t.title;
+    el.querySelector(".artist").textContent=t.artist || "Local Audio";
+    el.onclick=()=>loadTrack(i,true);
+    list.appendChild(el);
+  });
+}
+
+function loadTrack(i,autoplay){
+  if(i<0||i>=tracks.length)return;
+  current=i;
+  playerAudio.src=tracks[i].url;
+  $("trackTitle").textContent=tracks[i].title;
+  $("trackArtist").textContent=tracks[i].artist || "Local Audio";
+  $("progress").value=0;
+  renderTracks();
+  if(autoplay)playerAudio.play().catch(()=>{});
+}
+
+function updatePlayIcon(){ 
+  $("playIcon").innerHTML=playerAudio.paused?'<path d="M8 5v14l11-7z"/>':'<path d="M7 5h4v14H7zm6 0h4v14h-4z"/>'; 
+  $("art").classList.toggle("spin",!playerAudio.paused);
+}
+
+$("playBtn").o
