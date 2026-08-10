@@ -119,9 +119,42 @@ soundBadge.addEventListener("click",e=>{if(e.target===soundFile)return;if(badgeU
 soundFile.onchange=e=>{const f=e.target.files[0];if(!f)return;if(badgeUrl)URL.revokeObjectURL(badgeUrl);badgeUrl=URL.createObjectURL(f);audio.src=badgeUrl;audio.play().catch(()=>{});showToast("Playing "+f.name)};
 
 const drawer=$("drawer");$("plBtn").onclick=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false")};$("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true")};
-
-const tracks=[];let current=-1;const playerAudio=new Audio();
 function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+  const tracks = [
+  { title: "2 Dada Part 2", artist: "Masoom Sharma", url: "2_Dada_-_Part_2__Full_Video___Masoom_Sharma_New_Song___Shivani_Yadav___New_Haryanvi_Song_2024(0).mp3" },
+  { title: "2 Dada Lyrical", artist: "Masoom Sharma", url: "2_Dada__Lyrical_Video____MASOOM_SHARMA_ft._Khushi_Baliyan__Manjeet_M_Ashu_T__New_Haryanvi_Song_2023(0).mp3" },
+  { title: "2 Dada", artist: "Masoom Sharma", url: "2_Dada___MASOOM_SHARMA_ft._Khushi_Baliyan__Manjeet_M_Ashu_T__New_Haryanvi_Song_2023(0).mp3" },
+  { title: "2 Khatole", artist: "Masoom Sharma", url: "2_Khatole___MASOOM_SHARMA___Manjeet_Mor___Chahal_Saab_Vikash_Rajana___New_Haryanvi_Song_2024(0).mp3" },
+  { title: "32 Ke Fire", artist: "Masoom Sharma", url: "32_Ke_fire___Masoom_Sharma___Kaash_Beniwal___Vaishali_Chaudhary___Ashu_Twinkle___New_Haryanvi_Song(0).mp3" },
+  { title: "60 Mukadme", artist: "Masoom Sharma", url: "60_MUKADME___MASOOM_SHARMA___Manjeet_Mor___Shivani_Yadav___Shiva_Chaudhary___New_Haryanvi_Song_2024(0).mp3" },
+  { title: "Arbi Ghode", artist: "Masoom Sharma", url: "ARBI_GHODE__LYRICAL___-_Yaar_Ne_Rapiya_Ni_Joda___Masoom_Sharma___Jaivir___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Blender 8K", artist: "Masoom Sharma", url: "Blender___8K_Video___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Byah Ke Lavenge", artist: "Masoom Sharma", url: "Byah_Ke_Lavenge_Official_Video__Masoom_Sharma___Sachin_Jaat___Ashu_Twinkle___Hit_Music(0).mp3" },
+  { title: "Chambal Ke Dakku", artist: "Masoom Sharma", url: "Chambal_K_Dakku___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Chamunda", artist: "Masoom Sharma", url: "Chamunda__Official_Video___Masoom_Sharma_Ashu_T___Aman_Jaji___Divyanka_Sirohi___New_Song_2023(0).mp3" },
+  { title: "Daaku Daaku", artist: "Masoom Sharma", url: "Daaku_Daaku__Full_Video___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Ek Khatola Jail Ke Bhitar 1", artist: "Masoom Sharma", url: "EK_KHATOLA_JAIL_KE_BHITAR___Masoom_Sharma___Ankit_Baliyan___Divyanka_Sirohi__New_Haryanvi_Song_2023(0).mp3" },
+  { title: "Ek Khatola Jail Ke Bhitar 2", artist: "Masoom Sharma", url: "Ek_Khtola_Jail_Ke_Bhitar___Masoom_Sharma___Ankit_Baliyan___Divyanka_Sirohi__New_Haryanvi_Song_2023(0).mp3" },
+  { title: "Gundey Dore Pe", artist: "Masoom Sharma", url: "Gundey_Dore_Pe___Official_Video___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Kalam Tod Di", artist: "Masoom Sharma", url: "Kalam_Tod_DI___MASOOM_SHARMA___Manjeet_Mor___Khushi_Verma___New_Haryanvi_Songs_2025(256k).mp3" },
+  { title: "Khoon Ki Holi", artist: "Masoom Sharma", url: "Khoon_Ki_Holi__Official_Video___Masoom_Sharma___Ashu_Twinkle___Ajay_Dhankhar___Pinna_Music(256k).mp3" },
+  { title: "Lala Ji Ki Chori", artist: "Masoom Sharma", url: "Lala_Ji_Ki_Chori(256k).mp3" },
+  { title: "Licence Ka Asla", artist: "Masoom Sharma", url: "LICENCE_Ka_Asla_-_Licence___Masoom_Sharma___Amar_Karnawal(256k).mp3" },
+  { title: "Davai", artist: "Masoom Sharma", url: "MASOOM_SHARMA_-_Davai__FULL_SONG___Ashu_Twinkle___Navdeep_Yadav___New_Haryanvi_Songs_2025(256k).mp3" },
+  { title: "Madam Ji", artist: "Masoom Sharma", url: "Madam_Ji__Official_Video___Masoom_Sharma___Amar_Karnawal_Pinna_Music___New_Haryanvi_Songs_2025(256k).mp3" },
+  { title: "Mahila Mittar", artist: "Masoom Sharma", url: "Mahila_Mittar__FULL_SONG___-_Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Main Vohe", artist: "Masoom Sharma", url: "Main_Vohe__Official_Video___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Mard", artist: "Masoom Sharma", url: "Mard__Official_Video___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Ramayan Ka Saar", artist: "Masoom Sharma", url: "Ramayan_Ka_Saar__Full_Song___Masoom_Sharma___Amar_Karnawal___Pinna_Music___New_Haryanvi_Song_2025(256k).mp3" },
+  { title: "Sab Gunday Hai", artist: "Masoom Sharma", url: "Sab_Gunday_Hai___Masoom_Sharma___Amar_Karnawal___Thinker___New_Haryanvi_Songs_2026(256k).mp3" },
+  { title: "Warning", artist: "Masoom Sharma", url: "WARNING__Official_Video___Masoom_Sharma___Malika_Kaliraman___Haryanvi_Songs_Haryanavi_2025(256k).mp3" },
+  { title: "Yaha Ke Bahubali", artist: "Masoom Sharma", url: "Yaha_Ke_Bahubali__Official_Video___Masoom_Sharma___Amar_Karnawal___New_Haryanvi_Songs_Haryanavi_2026(256k).mp3" },
+  { title: "Instagram Audio", artist: "Audio", url: "instagram_1786347406510(44.1K).m4a" },
+  { title: "Ek Tarfa", artist: "Darshan Raval", url: "Ek Tarfa Darshan Raval 128 Kbps.mp3" },
+  { title: "PB 65 MOHALI DA", artist: "Sidhu Moose Wala", url: "PB_65_MOHALI_DA___SIDHU_MOOSE_WALA___0008_Baliya___Official_Video___New_Punjabi_Song_2023(256k).mp3" },
+  { title: "Sarkara Mein Hold", artist: "Hammy Muzic", url: "Sarkara_Mein_Hold_Hammy_Muzic___Syphr___New_Haryanvi_Song_2024_Latest_Haryanvi_Song_2024(360p)(1).mp3" },
+  { title: "Pistol Gel Beretta", artist: "Aman Rajgil", url: "Pistol_gel_beretta_ki_gadi_bin_number_pleta_ki_#beretta_#amanrajgil_#trendingshorts_#haryanvimusic(256k).mp3" }
+];
 function showToast(t){const x=$("toast");x.textContent=t;x.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>x.classList.remove("show"),1800)}
 function renderTracks(){const list=$("tracklist");list.innerHTML="";if(!tracks.length){list.innerHTML='<div style="padding:25px 18px;opacity:.55;text-align:center">No local tracks yet.<br>Use “ADD SONG” below.</div>'}
 tracks.forEach((t,i)=>{const el=document.createElement("div");el.className="track"+(i===current?" active":"");el.innerHTML='<div class="num">'+String(i+1).padStart(2,"0")+'</div><div class="meta"><div class="name"></div><div class="artist">LOCAL AUDIO</div></div>';el.querySelector(".name").textContent=t.name;el.onclick=()=>loadTrack(i,true);list.appendChild(el)});
