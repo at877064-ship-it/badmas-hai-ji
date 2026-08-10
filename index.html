@@ -173,13 +173,10 @@ const tracks = [
 
 function showToast(t){const x=$("toast");x.textContent=t;x.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>x.classList.remove("show"),1800)}
 
-function renderTracks(){
+ function renderTracks(){
   const list=$("tracklist");
   list.innerHTML="";
-  if(!tracks.length){
-    list.innerHTML='<div style="padding:25px 18px;opacity:.55;text-align:center">No local tracks yet.</div>';
-    return;
-  }
+  
   tracks.forEach((t,i)=>{
     const el=document.createElement("div");
     el.className="track"+(i===current?" active":"");
@@ -189,7 +186,21 @@ function renderTracks(){
     el.onclick=()=>loadTrack(i,true);
     list.appendChild(el);
   });
-}
+
+  const add=document.createElement("div");
+  add.style.cssText="padding:16px 18px";
+  add.innerHTML='<label class="uploadBtn" style="display:block;text-align:center;padding:12px;font-size:0.85rem;font-weight:700;">＋ ADD SONGS FROM DEVICE<input id="playlistFiles" type="file" accept="audio/*" multiple hidden></label>';
+  list.appendChild(add);
+
+  $("playlistFiles").onchange=e=>{
+    [...e.target.files].forEach(f=>{
+      tracks.push({title: f.name.replace(/\.[^/.]+$/, ""), artist: "Uploaded", url: URL.createObjectURL(f)});
+    });
+    renderTracks();
+    if(current<0) loadTrack(0,false);
+    showToast("Songs added to playlist");
+  };
+ }
 
 function loadTrack(i,autoplay){
   if(i<0||i>=tracks.length)return;
