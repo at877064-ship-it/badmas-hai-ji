@@ -217,4 +217,53 @@ function updatePlayIcon(){
   $("art").classList.toggle("spin",!playerAudio.paused);
 }
 
-$("playBtn").o
+$("playBtn").onclick = () => {
+  if (current === -1) {
+    loadTrack(0, true);
+  } else if (playerAudio.paused) {
+    playerAudio.play().catch(() => {});
+  } else {
+    playerAudio.pause();
+  }
+};
+
+// Handle audio events & timeline updates
+playerAudio.onplay = updatePlayIcon;
+playerAudio.onpause = updatePlayIcon;
+
+playerAudio.ontimeupdate = () => {
+  if (!playerAudio.duration) return;
+  const pct = (playerAudio.currentTime / playerAudio.duration) * 100;
+  $("progress").value = pct;
+  $("time").textContent = `${formatTime(playerAudio.currentTime)} / ${formatTime(playerAudio.duration)}`;
+};
+
+playerAudio.onended = () => {
+  if (current < tracks.length - 1) {
+    loadTrack(current + 1, true);
+  } else {
+    loadTrack(0, true); // Loop back to beginning
+  }
+};
+
+// Seek bar control
+$("progress").oninput = (e) => {
+  if (playerAudio.duration) {
+    playerAudio.currentTime = (e.target.value / 100) * playerAudio.duration;
+  }
+};
+
+// Next & Previous buttons
+$("prevBtn").onclick = () => {
+  if (current > 0) loadTrack(current - 1, true);
+};
+
+$("nextBtn").onclick = () => {
+  if (current < tracks.length - 1) loadTrack(current + 1, true);
+};
+
+// Initialize the playlist on page load
+renderTracks();
+  </script>
+</body>
+</html>
