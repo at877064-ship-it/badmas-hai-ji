@@ -220,7 +220,102 @@ const tracks = [
   { title: "Raja Ji Ke Dilwa", artist: "Local Audio", url: "raja_ji_ke_dilwa.mp3" },
   { title: "Sadiya", artist: "Local Audio", url: "sadiya.mp3" },
   { title: "Kamariya Dole Dole", artist: "Local Audio", url: "kamariya_dole_dole.mp3" }
-  ];
+  ]; // Render tracks into the playlist drawer
+const tracklistEl = $("tracklist");
+tracks.forEach((track, index) => {
+  const div = document.createElement("div");
+  div.className = "track";
+  div.innerHTML = `
+    <span class="num">${String(index + 1).padStart(2, '0')}</span>
+    <div class="meta">
+      <div class="name">${track.title}</div>
+      <div class="artist">${track.artist}</div>
+    </div>
+  `;
+  div.onclick = () => {
+    current = index;
+    loadTrack(current);
+    playerAudio.play();
+    $("art").classList.add("spin");
+    updatePlayBtn(true);
+    drawer.classList.remove("open");
+  };
+  tracklistEl.appendChild(div);
+});
+
+function loadTrack(i) {
+  const t = tracks[i];
+  playerAudio.src = t.url;
+  $("trackTitle").textContent = t.title;
+  $("trackArtist").textContent = t.artist;
+  document.querySelectorAll(".track").forEach((el, idx) => {
+    el.classList.toggle("active", idx === i);
+  });
+}
+
+const playBtn = $("playBtn");
+playBtn.onclick = () => {
+  if (current === -1 && tracks.length > 0) {
+    current = 0;
+    loadTrack(current);
+  }
+  if (playerAudio.paused) {
+    playerAudio.play();
+    $("art").classList.add("spin");
+    updatePlayBtn(true);
+  } else {
+    playerAudio.pause();
+    $("art").classList.remove("spin");
+    updatePlayBtn(false);
+  }
+};
+
+function updatePlayBtn(isPlaying) {
+  const icon = $("playIcon");
+  if (isPlaying) {
+    icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+  } else {
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+}
+
+playerAudio.ontimeupdate = () => {
+  if (playerAudio.duration) {
+    $("progress").value = (playerAudio.currentTime / playerAudio.duration) * 100;
+    $("time").textContent = formatTime(playerAudio.currentTime) + " / " + formatTime(playerAudio.duration);
+  }
+};
+
+$("progress").oninput = (e) => {
+  if (playerAudio.duration) {
+    playerAudio.currentTime = (e.target.value / 100) * playerAudio.duration;
+  }
+};
+
+$("nextBtn").onclick = () => {
+  if (tracks.length === 0) return;
+  current = (current + 1) % tracks.length;
+  loadTrack(current);
+  playerAudio.play();
+  $("art").classList.add("spin");
+  updatePlayBtn(true);
+};
+
+$("prevBtn").onclick = () => {
+  if (tracks.length === 0) return;
+  current = (current - 1 + tracks.length) % tracks.length;
+  loadTrack(current);
+  playerAudio.play();
+  $("art").classList.add("spin");
+  updatePlayBtn(true);
+};
+
+function showToast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
 </script>
 </body>
 </html>
