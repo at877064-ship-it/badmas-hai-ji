@@ -62,11 +62,11 @@ button{color:inherit}
 #art.spin{animation-play-state:running}@keyframes spin{to{transform:rotate(360deg)}}#art:after{content:'';width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid #0a0b0c}
 #meta{flex:1;min-width:0}.title,.artist{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:700;font-size:1rem}.artist{font-size:.8rem;opacity:.6}
 #progressRow{display:flex;align-items:center;gap:8px;margin-top:5px}#progress{appearance:none;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(233,230,223,.15);flex:1;cursor:pointer}#progress::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--amber)}#time{font-size:.7rem;opacity:.55;white-space:nowrap}
-#controls{display:flex;align-items:center;gap:6px;flex:none}#controls button{background:none;border:none;cursor:pointer;width:34px;height:34px;display:flex;align-items:center;justify-content:center}#controls svg{width:18px;height:18px;fill:var(--cream)}
-#playBtn{width:46px!important;height:46px!important;border-radius:50%;background:linear-gradient(180deg,var(--amber),#a67a2e);box-shadow:0 3px 8px rgba(0,0,0,.4)}#playBtn svg{width:20px;height:20px;fill:#141516}
+#controls{display:flex;align-items:center;gap:4px;flex:none}#controls button{background:none;border:none;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:bold;color:var(--amber)}#controls svg{width:18px;height:18px;fill:var(--cream)}
+#playBtn{width:42px!important;height:42px!important;border-radius:50%;background:linear-gradient(180deg,var(--amber),#a67a2e);box-shadow:0 3px 8px rgba(0,0,0,.4)}#playBtn svg{width:20px;height:20px;fill:#141516}
 #toast{position:fixed;left:50%;bottom:105px;transform:translate(-50%,15px);z-index:80;background:#141516;border:1px solid #45484a;color:var(--cream);padding:9px 14px;border-radius:4px;opacity:0;pointer-events:none;transition:.25s;font-size:.85rem}
 #toast.show{opacity:1;transform:translate(-50%,0)}
-@media(max-width:560px){#headline{margin-top:8vh}#soundBadge{top:35%}#player{bottom:10px;padding:8px 10px 8px 8px;gap:8px}#art{width:46px;height:46px}#meta .title{font-size:.88rem}#controls{gap:1px}#controls button:not(#playBtn){display:none}#playBtn{width:42px!important;height:42px!important}}
+@media(max-width:560px){#headline{margin-top:8vh}#soundBadge{top:35%}#player{bottom:10px;padding:8px 10px 8px 8px;gap:8px}#art{width:46px;height:46px}#meta .title{font-size:.88rem}#controls{gap:1px}#controls button:not(#playBtn){display:flex}#playBtn{width:38px!important;height:38px!important}}
 </style>
 </head>
 <body>
@@ -86,8 +86,7 @@ button{color:inherit}
 <span class="soundText"><span class="hi">बदमाश</span><span class="en">BADMAS</span></span>
 <input type="file" id="soundFile" accept="audio/*" hidden></button>
 <audio id="badgeAudio"></audio>
-<audio id="playerAudio1"></audio>
-<audio id="playerAudio2"></audio>
+<audio id="playerAudio"></audio>
 
 <div id="headline">
   <h1>BADMAS HAI JI • BY THAKUR ADITYA</h1>
@@ -111,9 +110,11 @@ button{color:inherit}
 <div id="meta"><div class="title" id="trackTitle">No track selected</div><div class="artist" id="trackArtist">Upload a song to begin</div>
 <div id="progressRow"><input id="progress" type="range" min="0" max="100" value="0"><span id="time">0:00 / 0:00</span></div></div>
 <div id="controls">
-<button id="prevBtn" title="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zm3 7 10-7v14z"/></svg></button>
+<button id="prevBtn" title="Previous Track"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zm3 7 10-7v14z"/></svg></button>
+<button id="rewindBtn" title="-10 Seconds">-10s</button>
 <button id="playBtn" title="Play/Pause"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-<button id="nextBtn" title="Next"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+<button id="forwardBtn" title="+10 Seconds">+10s</button>
+<button id="nextBtn" title="Next Track"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
 </div></div>
 
 <div id="toast"></div>
@@ -121,18 +122,7 @@ button{color:inherit}
 <script>
 function $(id){return document.getElementById(id)}
 let current = -1;
-let activePlayer = 1;
-
-const audio1 = $("playerAudio1");
-const audio2 = $("playerAudio2");
-
-function getActiveAudio() {
-  return activePlayer === 1 ? audio1 : audio2;
-}
-
-function getInactiveAudio() {
-  return activePlayer === 1 ? audio2 : audio1;
-}
+const audio = $("playerAudio");
 
 const PASSCODE="badmas";
 const lock=$("lock"), input=$("lockInput"), error=$("lockError");
@@ -173,6 +163,28 @@ $("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribut
 function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
 
 const tracks = [
+  // OLD Classic Songs (Inside "old_classics" folder)
+  { title: "Is Tarah Ashiqui Ka", artist: "Local Audio", url: "is_tarah_ashiqui_ka.mp3" },
+  { title: "Tere Dard Se Dil", artist: "Local Audio", url: "tere_dard_se_dil.mp3" },
+  { title: "Pehli Pehli Baar Mohabbat", artist: "Local Audio", url: "pehli_pehli_baar_mohabbat.mp3" },
+  { title: "Ankh Hai Bhari Bhari", artist: "Local Audio", url: "ankh_hai_bhari_bhari.mp3" },
+  { title: "Hum Pyar Hai", artist: "Local Audio", url: "hum_pyar_hai.mp3" },
+  { title: "Sochenge Tumhe Pyaar", artist: "Local Audio", url: "sochenge_tumhe_pyaar.mp3" },
+  { title: "Mujhse Mohabbat Ka", artist: "Local Audio", url: "mujhse_mohabbat_ka.mp3" },
+  { title: "Zaroorat Hai", artist: "Local Audio", url: "zaroorat_hai.mp3" },
+  { title: "Raah Mein Unse Mulaqat", artist: "Local Audio", url: "Raah_Mein_Unse_Mulaqat(256k).mp3" },
+  { title: "Itna Na Mujhse Tu Pyar", artist: "Local Audio", url: "itna_na_mujhse_tu_pyar.mp3" },
+  { title: "Chupke Chupke Raat Din", artist: "Local Audio", url: "chupke_chupke_raat_din.mp3" },
+  { title: "Shikwa Nahi Kisi Se", artist: "Local Audio", url: "shikwa_nahi_kisi_se.mp3" },
+  { title: "Dil Laga Liya", artist: "Local Audio", url: "dil_laga_liya.mp3" },
+  { title: "Jeeta Tha Jiske Liye", artist: "Local Audio", url: "jeeta_tha_jiske_liye.mp3" },
+  { title: "Pal Pal Dil Ke", artist: "Local Audio", url: "pal_pal_dil_ke.mp3" },
+  { title: "Tum Chupa Na Sakogi", artist: "Local Audio", url: "tum_chupa_na_sakogi.mp3" },
+  { title: "Hoshwalo Ko Khabar", artist: "Local Audio", url: "hoshwalo_ko_khabar.mp3" },
+  { title: "Barsat Ke Mausam", artist: "Local Audio", url: "barsat_ke_mausam.mp3" },
+  { title: "Mere Mehboob Old", artist: "Local Audio", url: "mere_mehboob_old.mp3" },
+
+  // Existing Playlist 
   { title: "2 Dada Part 2", artist: "Masoom Sharma", url: "2dada2.mp3" },
   { title: "2 Dada Lyrical", artist: "Masoom Sharma", url: "2dada_lyrical.mp3" },
   { title: "2 Dada", artist: "Masoom Sharma", url: "2dada.mp3" },
@@ -229,167 +241,4 @@ const tracks = [
   { title: "Blowing Up", artist: "Audio", url: "blowing_up.mp3" },
   { title: "Khatta Flow", artist: "KRSNA / Seedhe Maut", url: "khatta_flow.mp3" },
   { title: "Vibrate", artist: "Audio", url: "vibrate.mp3" },
-  { title: "Prarthana", artist: "KR$NA", url: "Prarthana.mp3" },
-  { title: "Joota Japani", artist: "Audio", url: "joota_japani.mp3" },
-  { title: "Hola Amigo", artist: "KR$NA", url: "Hola_amigo.mp3" },
-  { title: "Knock Knock", artist: "Audio", url: "knock_knock.mp3" },
-  { title: "Kaali Kaali Zulfo", artist: "Local Audio", url: "kaali_kaali_zulfo.mp3" },
-  { title: "Humdam Aditya", artist: "Local Audio", url: "humdam_Aditya.mp3" },
-  { title: "Samjho Na", artist: "Local Audio", url: "samjho_na.mp3" },
-  { title: "Paaro", artist: "Local Audio", url: "paaro.mp3" },
-  { title: "Suroor Music", artist: "Local Audio", url: "suroor_music.mp3" },
-  { title: "Ye Jo Halka Halka", artist: "Local Audio", url: "ye_jo_halka_halka.mp3" },
-  { title: "Ek Dhun", artist: "Local Audio", url: "ek_dhun.mp3" },
-  { title: "Saiyara Tu To", artist: "Local Audio", url: "saiyara_tu_to.mp3" },
-  { title: "Chahun Mai Ya Na", artist: "Local Audio", url: "chahun_mai_ya_na.mp3" },
-  { title: "Milne Hai Mujhse Aayi", artist: "Local Audio", url: "milne_hai_mujhse_aayi.mp3" },
-  { title: "Piya Aaye Na", artist: "Local Audio", url: "piya_aaye_na.mp3" },
-  { title: "Piya Ji Ke Muski", artist: "Local Audio", url: "piya_ji_ke_muski.mp3" },
-  { title: "Raja Rangbaaz", artist: "Local Audio", url: "raja_rangbaaz.mp3" },
-  { title: "Pawan Singh Babuan", artist: "Local Audio", url: "pawan_singh_babuan.mp3" },
-  { title: "Saj Ke Sawar Ke", artist: "Local Audio", url: "saj_ke_sawar_ke.mp3" },
-  { title: "Raja Ji Ke Dilwa", artist: "Local Audio", url: "raja_ji_ke_dilwa.mp3" },
-  { title: "Sadiya", artist: "Local Audio", url: "sadiya.mp3" },
-  { title: "Kamariya Dole Dole", artist: "Local Audio", url: "kamariya_dole_dole.mp3" },
-  { title: "Mai Vohe", artist: "Masoom Sharma", url: "mai_vohe.mp3" }
-];
-
-const tracklistEl = $("tracklist");
-tracks.forEach((track, index) => {
-  const div = document.createElement("div");
-  div.className = "track";
-  div.innerHTML = `
-    <span class="num">${String(index + 1).padStart(2, '0')}</span>
-    <div class="meta">
-      <div class="name">${track.title}</div>
-      <div class="artist">${track.artist}</div>
-    </div>
-  `;
-  div.onclick = () => {
-    current = index;
-    loadTrack(current, true);
-    drawer.classList.remove("open");
-  };
-  tracklistEl.appendChild(div);
-});
-
-function loadTrack(i, autoPlay = false) {
-  const t = tracks[i];
-  const currAudio = getActiveAudio();
-  const prevAudio = getInactiveAudio();
-
-  currAudio.src = t.url;
-  $("trackTitle").textContent = t.title;
-  $("trackArtist").textContent = t.artist;
-  
-  document.querySelectorAll(".track").forEach((el, idx) => {
-    el.classList.toggle("active", idx === i);
-  });
-
-  if (autoPlay) {
-    prevAudio.volume = 1;
-    currAudio.volume = 0;
-    currAudio.play().then(() => {
-      let fadeDuration = 2000; 
-      let steps = 20;
-      let stepTime = fadeDuration / steps;
-      let volumeStep = 1 / steps;
-
-      let fadeInterval = setInterval(() => {
-        if (prevAudio.volume > volumeStep) {
-          prevAudio.volume -= volumeStep;
-          if (currAudio.volume < 1 - volumeStep) {
-            currAudio.volume += volumeStep;
-          }
-        } else {
-          prevAudio.pause();
-          prevAudio.volume = 1;
-          currAudio.volume = 1;
-          activePlayer = activePlayer === 1 ? 2 : 1;
-          clearInterval(fadeInterval);
-        }
-      }, stepTime);
-    }).catch(() => {});
-
-    $("art").classList.add("spin");
-    updatePlayBtn(true);
-  }
-}
-
-audio1.ontimeupdate = () => handleTimeUpdate(audio1);
-audio2.ontimeupdate = () => handleTimeUpdate(audio2);
-
-function handleTimeUpdate(player) {
-  if (player === getActiveAudio() && player.duration) {
-    $("progress").value = (player.currentTime / player.duration) * 100;
-    $("time").textContent = formatTime(player.currentTime) + " / " + formatTime(player.duration);
-
-    if (player.duration - player.currentTime <= 2.0 && !player.dataset.fading) {
-      player.dataset.fading = "true";
-      if (tracks.length > 0) {
-        current = (current + 1) % tracks.length;
-        loadTrack(current, true);
-      }
-    }
-  }
-}
-
-audio1.onended = () => { audio1.dataset.fading = ""; };
-audio2.onended = () => { audio2.dataset.fading = ""; };
-
-const playBtn = $("playBtn");
-playBtn.onclick = () => {
-  const curr = getActiveAudio();
-  if (current === -1 && tracks.length > 0) {
-    current = 0;
-    loadTrack(current, true);
-    return;
-  }
-  if (curr.paused) {
-    curr.play();
-    $("art").classList.add("spin");
-    updatePlayBtn(true);
-  } else {
-    curr.pause();
-    $("art").classList.remove("spin");
-    updatePlayBtn(false);
-  }
-};
-
-function updatePlayBtn(isPlaying) {
-  const icon = $("playIcon");
-  if (isPlaying) {
-    icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
-  } else {
-    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-  }
-}
-
-$("progress").oninput = (e) => {
-  const curr = getActiveAudio();
-  if (curr.duration) {
-    curr.currentTime = (e.target.value / 100) * curr.duration;
-  }
-};
-
-$("nextBtn").onclick = () => {
-  if (tracks.length === 0) return;
-  current = (current + 1) % tracks.length;
-  loadTrack(current, true);
-};
-
-$("prevBtn").onclick = () => {
-  if (tracks.length === 0) return;
-  current = (current - 1 + tracks.length) % tracks.length;
-  loadTrack(current, true);
-};
-
-function showToast(msg) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
-}
-</script>
-</body>
-</html>
+  { title: "Prarthana", artist: "KR$NA", url: "Prarthana.m
