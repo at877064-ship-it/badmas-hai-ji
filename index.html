@@ -1,280 +1,425 @@
-<script>
-function $(id){return document.getElementById(id)}
-let current = -1;
-let activePlayer = 1;
-let fadeInterval = null; // Track current fade interval to prevent race conditions
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Player</title>
+  <style>
+    /* Base Setup & Utilities */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #fff; padding: 20px; }
+    
+    .hidden { display: none !important; }
+    .spin { animation: rotate 10s linear infinite; }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-const audio1 = $("playerAudio1");
-const audio2 = $("playerAudio2");
+    /* Passcode Lock Overlay */
+    #lock {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1000; gap: 10px;
+    }
+    #lock input { padding: 10px; font-size: 16px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; }
+    #lock button { padding: 10px 20px; font-size: 16px; border-radius: 6px; border: none; background: #1db954; color: #fff; cursor: pointer; }
+    #lockError { color: #ff5555; font-size: 14px; min-height: 20px; }
 
-function getActiveAudio() {
-  return activePlayer === 1 ? audio1 : audio2;
-}
+    /* Player Interface */
+    .player-card { max-width: 400px; margin: 0 auto; background: #181818; padding: 20px; border-radius: 12px; text-align: center; }
+    #art { width: 120px; height: 120px; border-radius: 50%; background: #333; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .track-info { margin-bottom: 15px; }
+    .track-title { font-size: 18px; font-weight: bold; }
+    .track-artist { font-size: 14px; color: #aaa; margin-top: 4px; }
 
-function getInactiveAudio() {
-  return activePlayer === 1 ? audio2 : audio1;
-}
+    /* Controls */
+    .controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 15px 0; }
+    .controls button { background: none; border: none; color: #fff; cursor: pointer; fill: #fff; width: 36px; height: 36px; }
+    
+    /* Progress Bar */
+    .progress-container { width: 100%; margin: 10px 0; }
+    input[type="range"] { width: 100%; accent-color: #1db954; }
+    .time-display { font-size: 12px; color: #aaa; margin-top: 4px; }
 
-const PASSCODE="badmas";
-const lock=$("lock"), input=$("lockInput"), error=$("lockError");
-function unlock(){
-  if(input.value.trim().toLowerCase()===PASSCODE){
-    lock.classList.add("hidden");
-    sessionStorage.setItem("badmas_unlocked","1");
-  }else{
-    error.textContent="That's not it — try again";
-    input.select();
-  }
-}
-$("lockBtn").onclick=unlock;
-input.onkeydown=e=>{if(e.key==="Enter")unlock()};
-if(sessionStorage.getItem("badmas_unlocked")==="1")lock.classList.add("hidden");
+    /* Tracklist Drawer */
+    .drawer { position: fixed; bottom: 0; left: 0; right: 0; background: #282828; max-height: 60vh; overflow-y: auto; transition: transform 0.3s ease; transform: translateY(100%); border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 20px; z-index: 100; }
+    .drawer.open { transform: translateY(0); }
+    .track { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; text-align: left; }
+    .track:hover { background: #333; }
+    .track.active { color: #1db954; }
+    .track .num { width: 30px; font-size: 12px; color: #888; }
+    .track .meta { flex-grow: 1; }
+    .track .name { font-size: 14px; font-weight: 500; }
+    .track .artist { font-size: 12px; color: #aaa; }
 
-const audioBadge=$("badgeAudio"), soundFile=$("soundFile"), soundBadge=$("soundBadge");
-let badgeUrl=null;
-soundBadge.addEventListener("click",e=>{
-  if(e.target===soundFile)return;
-  if(badgeUrl){audioBadge.currentTime=0;audioBadge.play().catch(()=>{})}
-  else soundFile.click();
-});
-soundFile.onchange=e=>{
-  const f=e.target.files[0];
-  if(!f)return;
-  if(badgeUrl)URL.revokeObjectURL(badgeUrl);
-  badgeUrl=URL.createObjectURL(f);
-  audioBadge.src=badgeUrl;
-  audioBadge.play().catch(()=>{});
-  showToast("Playing "+f.name);
-};
+    /* Toast Notification */
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1db954; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 500; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
 
-const drawer=$("drawer");
-$("plBtn").onclick=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false")};
-$("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true")};
+  <!-- Audio Elements for Dual Crossfade Player -->
+  <audio id="playerAudio1" preload="auto"></audio>
+  <audio id="playerAudio2" preload="auto"></audio>
+  <audio id="badgeAudio" preload="auto"></audio>
 
-function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+  <!-- Passcode Overlay -->
+  <div id="lock">
+    <h2>Protected Access</h2>
+    <input type="password" id="lockInput" placeholder="Enter Passcode" />
+    <button id="lockBtn">Unlock</button>
+    <div id="lockError"></div>
+  </div>
 
-const tracks = [
-  { title: "2 Dada Part 2", artist: "Masoom Sharma", url: "2dada2.mp3" },
-  { title: "2 Dada Lyrical", artist: "Masoom Sharma", url: "2dada_lyrical.mp3" },
-  { title: "2 Dada", artist: "Masoom Sharma", url: "2dada.mp3" },
-  { title: "2 Khatole", artist: "Masoom Sharma", url: "2khatole.mp3" },
-  { title: "32 Ke Fire", artist: "Masoom Sharma", url: "32kefire.mp3" },
-  { title: "60 Mukadme", artist: "Masoom Sharma", url: "60mukadme.mp3" },
-  { title: "Arbi Ghode", artist: "Masoom Sharma", url: "arbi_ghode.mp3" },
-  { title: "Blender 8K", artist: "Masoom Sharma", url: "blender8k.mp3" },
-  { title: "Byah Ke Lavenge", artist: "Masoom Sharma", url: "byah_ke_lavenge.mp3" },
-  { title: "Chambal Ke Dakku", artist: "Masoom Sharma", url: "chambal_ke_dakku.mp3" },
-  { title: "Chamunda", artist: "Masoom Sharma", url: "chamunda.mp3" },
-  { title: "Daaku Daaku", artist: "Masoom Sharma", url: "daaku_daaku.mp3" },
-  { title: "Ek Khatola Jail Ke Bhitar 1", artist: "Masoom Sharma", url: "ek_khatola_1.mp3" },
-  { title: "Ek Khatola Jail Ke Bhitar 2", artist: "Masoom Sharma", url: "ek_khatola_2.mp3" },
-  { title: "Gundey Dore Pe", artist: "Masoom Sharma", url: "gundey_dore_pe.mp3" },
-  { title: "Kalam Tod Di", artist: "Masoom Sharma", url: "kalam_tod_di.mp3" },
-  { title: "Khoon Ki Holi", artist: "Masoom Sharma", url: "khoon_ki_holi.mp3" },
-  { title: "Lala Ji Ki Chori", artist: "Masoom Sharma", url: "lala_ji_ki_chori.mp3" },
-  { title: "Licence Ka Asla", artist: "Masoom Sharma", url: "licence_ka_asla.mp3" },
-  { title: "Davai", artist: "Masoom Sharma", url: "davai.mp3" },
-  { title: "Madam Ji", artist: "Masoom Sharma", url: "madam_ji.mp3" },
-  { title: "Mahila Mittar", artist: "Masoom Sharma", url: "mahila_mittar.mp3" },
-  { title: "Main Vohe", artist: "Masoom Sharma", url: "main_vohe.mp3" },
-  { title: "Mard", artist: "Masoom Sharma", url: "mard.mp3" },
-  { title: "Ramayan Ka Saar", artist: "Masoom Sharma", url: "ramayan_ka_saar.mp3" },
-  { title: "Sab Gunday Hai", artist: "Masoom Sharma", url: "sab_gunday_hai.mp3" },
-  { title: "Warning", artist: "Masoom Sharma", url: "warning.mp3" },
-  { title: "Yaha Ke Bahubali", artist: "Masoom Sharma", url: "yaha_ke_bahubali.mp3" },
-  { title: "Instagram Audio", artist: "Audio", url: "instagram_audio.m4a" },
-  { title: "Ek Tarfa", artist: "Darshan Raval", url: "ek_tarfa.mp3" },
-  { title: "PB 65 MOHALI DA", artist: "Sidhu Moose Wala", url: "pb65_mohali_da.mp3" },
-  { title: "Sarkara Mein Hold", artist: "Hammy Muzic", url: "sarkara_mein_hold.mp3" },
-  { title: "Pistol Gel Beretta", artist: "Aman Rajgil", url: "pistol_gel_beretta.mp3" },
-  { title: "Anti Dote", artist: "Audio", url: "anti_dote.mp3" },
-  { title: "5 7", artist: "Audio", url: "5_7.mp3" },
-  { title: "Bachke Bachke", artist: "Audio", url: "bachke_bachke.mp3" },
-  { title: "At Peace", artist: "Audio", url: "At_peace.mp3" },
-  { title: "Goin Off", artist: "Audio", url: "goin_off.mp3" },
-  { title: "Court Side", artist: "Audio", url: "court_side.mp3" },
-  { title: "Gangsta Karan", artist: "Karan Aujla", url: "gangsta_karan.mp3" },
-  { title: "Take It Easy", artist: "Audio", url: "take_it_easy.mp3" },
-  { title: "Wavy Official", artist: "Karan Aujla", url: "wavy_official.mp3" },
-  { title: "Winning Speech", artist: "Karan Aujla", url: "winning_speech.mp3" },
-  { title: "MF Gabru", artist: "Audio", url: "mf_gabru.mp3" },
-  { title: "52 Bars", artist: "Karan Aujla", url: "52_bars.mp3" },
-  { title: "Low Fade", artist: "Audio", url: "low_fade.mp3" },
-  { title: "YKWIM Karan", artist: "Karan Aujla", url: "ykwim_karan.mp3" },
-  { title: "Boom Shaka", artist: "Audio", url: "boom_shaka.mp3" },
-  { title: "Bhid Matt", artist: "Audio", url: "bhid_matt.mp3" },
-  { title: "Freeverse Feast", artist: "Audio", url: "freeverse_feast.mp3" },
-  { title: "Never Enough", artist: "Audio", url: "never_enough.mp3" },
-  { title: "Triple OG", artist: "Audio", url: "triple_og.mp3" },
-  { title: "Wanna Know", artist: "Audio", url: "wanna_know.mp3" },
-  { title: "Blowing Up", artist: "Audio", url: "blowing_up.mp3" },
-  { title: "Khatta Flow", artist: "KRSNA / Seedhe Maut", url: "khatta_flow.mp3" },
-  { title: "Vibrate", artist: "Audio", url: "vibrate.mp3" },
-  { title: "Prarthana", artist: "KR$NA", url: "Prarthana.mp3" },
-  { title: "Joota Japani", artist: "Audio", url: "joota_japani.mp3" },
-  { title: "Hola Amigo", artist: "KR$NA", url: "Hola_amigo.mp3" },
-  { title: "Knock Knock", artist: "Audio", url: "knock_knock.mp3" },
-  { title: "Kaali Kaali Zulfo", artist: "Local Audio", url: "kaali_kaali_zulfo.mp3" },
-  { title: "Humdam Aditya", artist: "Local Audio", url: "humdam_Aditya.mp3" },
-  { title: "Samjho Na", artist: "Local Audio", url: "samjho_na.mp3" },
-  { title: "Paaro", artist: "Local Audio", url: "paaro.mp3" },
-  { title: "Suroor Music", artist: "Local Audio", url: "suroor_music.mp3" },
-  { title: "Ye Jo Halka Halka", artist: "Local Audio", url: "ye_jo_halka_halka.mp3" },
-  { title: "Ek Dhun", artist: "Local Audio", url: "ek_dhun.mp3" },
-  { title: "Saiyara Tu To", artist: "Local Audio", url: "saiyara_tu_to.mp3" },
-  { title: "Chahun Mai Ya Na", artist: "Local Audio", url: "chahun_mai_ya_na.mp3" },
-  { title: "Milne Hai Mujhse Aayi", artist: "Local Audio", url: "milne_hai_mujhse_aayi.mp3" },
-  { title: "Piya Aaye Na", artist: "Local Audio", url: "piya_aaye_na.mp3" },
-  { title: "Piya Ji Ke Muski", artist: "Local Audio", url: "piya_ji_ke_muski.mp3" },
-  { title: "Raja Rangbaaz", artist: "Local Audio", url: "raja_rangbaaz.mp3" },
-  { title: "Pawan Singh Babuan", artist: "Local Audio", url: "pawan_singh_babuan.mp3" },
-  { title: "Saj Ke Sawar Ke", artist: "Local Audio", url: "saj_ke_sawar_ke.mp3" },
-  { title: "Raja Ji Ke Dilwa", artist: "Local Audio", url: "raja_ji_ke_dilwa.mp3" },
-  { title: "Sadiya", artist: "Local Audio", url: "sadiya.mp3" },
-  { title: "Kamariya Dole Dole", artist: "Local Audio", url: "kamariya_dole_dole.mp3" },
-  { title: "Mai Vohe", artist: "Masoom Sharma", url: "mai_vohe.mp3" }
-];
-
-const tracklistEl = $("tracklist");
-tracks.forEach((track, index) => {
-  const div = document.createElement("div");
-  div.className = "track";
-  div.innerHTML = `
-    <span class="num">${String(index + 1).padStart(2, '0')}</span>
-    <div class="meta">
-      <div class="name">${track.title}</div>
-      <div class="artist">${track.artist}</div>
+  <!-- Player Main Layout -->
+  <div class="player-card">
+    <div id="art">🎵</div>
+    <div class="track-info">
+      <div id="trackTitle" class="track-title">Select a Track</div>
+      <div id="trackArtist" class="track-artist">—</div>
     </div>
-  `;
-  div.onclick = () => {
-    current = index;
-    loadTrack(current, true);
-    drawer.classList.remove("open");
-  };
-  tracklistEl.appendChild(div);
-});
 
-function loadTrack(i, autoPlay = false) {
-  const t = tracks[i];
-  const currAudio = getActiveAudio();
-  const prevAudio = getInactiveAudio();
+    <div class="progress-container">
+      <input type="range" id="progress" value="0" min="0" max="100" />
+      <div id="time" class="time-display">0:00 / 0:00</div>
+    </div>
 
-  currAudio.src = t.url;
-  $("trackTitle").textContent = t.title;
-  $("trackArtist").textContent = t.artist;
-  
-  document.querySelectorAll(".track").forEach((el, idx) => {
-    el.classList.toggle("active", idx === i);
-  });
+    <div class="controls">
+      <button id="prevBtn" title="Previous">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button id="playBtn" title="Play/Pause">
+        <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button id="nextBtn" title="Next">
+        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+      <button id="plBtn" title="Playlist">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+      </button>
+    </div>
 
-  if (autoPlay) {
-    if (fadeInterval) clearInterval(fadeInterval); // Clear any ongoing fade to prevent race conditions
+    <div id="soundBadge" style="cursor: pointer; margin-top: 10px; font-size: 12px; color: #888;">
+      📁 Upload Local Audio
+      <input type="file" id="soundFile" accept="audio/*" style="display:none;" />
+    </div>
+  </div>
 
-    prevAudio.volume = 1;
-    currAudio.volume = 0;
-    currAudio.play().then(() => {
-      let fadeDuration = 2000; 
-      let steps = 20;
-      let stepTime = fadeDuration / steps;
-      let volumeStep = 1 / steps;
+  <!-- Tracklist Drawer -->
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3>Playlist</h3>
+      <button id="closeDrawer" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div id="tracklist"></div>
+  </div>
 
-      fadeInterval = setInterval(() => {
-        if (prevAudio.volume > volumeStep) {
-          prevAudio.volume -= volumeStep;
-          if (currAudio.volume < 1 - volumeStep) {
-            currAudio.volume += volumeStep;
-          }
+  <!-- Toast Element -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Main JavaScript Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const $ = (id) => document.getElementById(id);
+
+      let current = -1;
+      let activePlayer = 1;
+      let fadeInterval = null;
+
+      const audio1 = $("playerAudio1");
+      const audio2 = $("playerAudio2");
+
+      function getActiveAudio() {
+        return activePlayer === 1 ? audio1 : audio2;
+      }
+
+      function getInactiveAudio() {
+        return activePlayer === 1 ? audio2 : audio1;
+      }
+
+      /* Lock screen logic */
+      const PASSCODE = "badmas";
+      const lock = $("lock"), input = $("lockInput"), error = $("lockError");
+      
+      function unlock() {
+        if (input.value.trim().toLowerCase() === PASSCODE) {
+          lock.classList.add("hidden");
+          sessionStorage.setItem("badmas_unlocked", "1");
         } else {
-          prevAudio.pause();
-          prevAudio.volume = 1;
-          currAudio.volume = 1;
-          activePlayer = activePlayer === 1 ? 2 : 1;
-          clearInterval(fadeInterval);
-          fadeInterval = null;
+          error.textContent = "That's not it — try again";
+          input.select();
         }
-      }, stepTime);
-    }).catch(() => {});
+      }
 
-    $("art").classList.add("spin");
-    updatePlayBtn(true);
-  }
-}
+      $("lockBtn").onclick = unlock;
+      input.onkeydown = (e) => { if (e.key === "Enter") unlock(); };
+      if (sessionStorage.getItem("badmas_unlocked") === "1") {
+        lock.classList.add("hidden");
+      }
 
-audio1.ontimeupdate = () => handleTimeUpdate(audio1);
-audio2.ontimeupdate = () => handleTimeUpdate(audio2);
+      /* Sound badge upload logic */
+      const audioBadge = $("badgeAudio"), soundFile = $("soundFile"), soundBadge = $("soundBadge");
+      let badgeUrl = null;
 
-function handleTimeUpdate(player) {
-  if (player === getActiveAudio() && player.duration) {
-    $("progress").value = (player.currentTime / player.duration) * 100;
-    $("time").textContent = formatTime(player.currentTime) + " / " + formatTime(player.duration);
+      soundBadge.addEventListener("click", (e) => {
+        if (e.target === soundFile) return;
+        if (badgeUrl) {
+          audioBadge.currentTime = 0;
+          audioBadge.play().catch(() => {});
+        } else {
+          soundFile.click();
+        }
+      });
 
-    if (player.duration - player.currentTime <= 2.0 && !player.dataset.fading) {
-      player.dataset.fading = "true";
-      if (tracks.length > 0) {
+      soundFile.onchange = (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        if (badgeUrl) URL.revokeObjectURL(badgeUrl);
+        badgeUrl = URL.createObjectURL(f);
+        audioBadge.src = badgeUrl;
+        audioBadge.play().catch(() => {});
+        showToast("Playing " + f.name);
+      };
+
+      /* Drawer Logic */
+      const drawer = $("drawer");
+      $("plBtn").onclick = () => { drawer.classList.add("open"); drawer.setAttribute("aria-hidden", "false"); };
+      $("closeDrawer").onclick = () => { drawer.classList.remove("open"); drawer.setAttribute("aria-hidden", "true"); };
+
+      function formatTime(s) {
+        if (!isFinite(s)) return "0:00";
+        s = Math.max(0, Math.floor(s));
+        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+      }
+
+      /* Tracklist Data */
+      const tracks = [
+        { title: "2 Dada Part 2", artist: "Masoom Sharma", url: "2dada2.mp3" },
+        { title: "2 Dada Lyrical", artist: "Masoom Sharma", url: "2dada_lyrical.mp3" },
+        { title: "2 Dada", artist: "Masoom Sharma", url: "2dada.mp3" },
+        { title: "2 Khatole", artist: "Masoom Sharma", url: "2khatole.mp3" },
+        { title: "32 Ke Fire", artist: "Masoom Sharma", url: "32kefire.mp3" },
+        { title: "60 Mukadme", artist: "Masoom Sharma", url: "60mukadme.mp3" },
+        { title: "Arbi Ghode", artist: "Masoom Sharma", url: "arbi_ghode.mp3" },
+        { title: "Blender 8K", artist: "Masoom Sharma", url: "blender8k.mp3" },
+        { title: "Byah Ke Lavenge", artist: "Masoom Sharma", url: "byah_ke_lavenge.mp3" },
+        { title: "Chambal Ke Dakku", artist: "Masoom Sharma", url: "chambal_ke_dakku.mp3" },
+        { title: "Chamunda", artist: "Masoom Sharma", url: "chamunda.mp3" },
+        { title: "Daaku Daaku", artist: "Masoom Sharma", url: "daaku_daaku.mp3" },
+        { title: "Ek Khatola Jail Ke Bhitar 1", artist: "Masoom Sharma", url: "ek_khatola_1.mp3" },
+        { title: "Ek Khatola Jail Ke Bhitar 2", artist: "Masoom Sharma", url: "ek_khatola_2.mp3" },
+        { title: "Gundey Dore Pe", artist: "Masoom Sharma", url: "gundey_dore_pe.mp3" },
+        { title: "Kalam Tod Di", artist: "Masoom Sharma", url: "kalam_tod_di.mp3" },
+        { title: "Khoon Ki Holi", artist: "Masoom Sharma", url: "khoon_ki_holi.mp3" },
+        { title: "Lala Ji Ki Chori", artist: "Masoom Sharma", url: "lala_ji_ki_chori.mp3" },
+        { title: "Licence Ka Asla", artist: "Masoom Sharma", url: "licence_ka_asla.mp3" },
+        { title: "Davai", artist: "Masoom Sharma", url: "davai.mp3" },
+        { title: "Madam Ji", artist: "Masoom Sharma", url: "madam_ji.mp3" },
+        { title: "Mahila Mittar", artist: "Masoom Sharma", url: "mahila_mittar.mp3" },
+        { title: "Main Vohe", artist: "Masoom Sharma", url: "main_vohe.mp3" },
+        { title: "Mard", artist: "Masoom Sharma", url: "mard.mp3" },
+        { title: "Ramayan Ka Saar", artist: "Masoom Sharma", url: "ramayan_ka_saar.mp3" },
+        { title: "Sab Gunday Hai", artist: "Masoom Sharma", url: "sab_gunday_hai.mp3" },
+        { title: "Warning", artist: "Masoom Sharma", url: "warning.mp3" },
+        { title: "Yaha Ke Bahubali", artist: "Masoom Sharma", url: "yaha_ke_bahubali.mp3" },
+        { title: "Instagram Audio", artist: "Audio", url: "instagram_audio.m4a" },
+        { title: "Ek Tarfa", artist: "Darshan Raval", url: "ek_tarfa.mp3" },
+        { title: "PB 65 MOHALI DA", artist: "Sidhu Moose Wala", url: "pb65_mohali_da.mp3" },
+        { title: "Sarkara Mein Hold", artist: "Hammy Muzic", url: "sarkara_mein_hold.mp3" },
+        { title: "Pistol Gel Beretta", artist: "Aman Rajgil", url: "pistol_gel_beretta.mp3" },
+        { title: "Anti Dote", artist: "Audio", url: "anti_dote.mp3" },
+        { title: "5 7", artist: "Audio", url: "5_7.mp3" },
+        { title: "Bachke Bachke", artist: "Audio", url: "bachke_bachke.mp3" },
+        { title: "At Peace", artist: "Audio", url: "At_peace.mp3" },
+        { title: "Goin Off", artist: "Audio", url: "goin_off.mp3" },
+        { title: "Court Side", artist: "Audio", url: "court_side.mp3" },
+        { title: "Gangsta Karan", artist: "Karan Aujla", url: "gangsta_karan.mp3" },
+        { title: "Take It Easy", artist: "Audio", url: "take_it_easy.mp3" },
+        { title: "Wavy Official", artist: "Karan Aujla", url: "wavy_official.mp3" },
+        { title: "Winning Speech", artist: "Karan Aujla", url: "winning_speech.mp3" },
+        { title: "MF Gabru", artist: "Audio", url: "mf_gabru.mp3" },
+        { title: "52 Bars", artist: "Karan Aujla", url: "52_bars.mp3" },
+        { title: "Low Fade", artist: "Audio", url: "low_fade.mp3" },
+        { title: "YKWIM Karan", artist: "Karan Aujla", url: "ykwim_karan.mp3" },
+        { title: "Boom Shaka", artist: "Audio", url: "boom_shaka.mp3" },
+        { title: "Bhid Matt", artist: "Audio", url: "bhid_matt.mp3" },
+        { title: "Freeverse Feast", artist: "Audio", url: "freeverse_feast.mp3" },
+        { title: "Never Enough", artist: "Audio", url: "never_enough.mp3" },
+        { title: "Triple OG", artist: "Audio", url: "triple_og.mp3" },
+        { title: "Wanna Know", artist: "Audio", url: "wanna_know.mp3" },
+        { title: "Blowing Up", artist: "Audio", url: "blowing_up.mp3" },
+        { title: "Khatta Flow", artist: "KRSNA / Seedhe Maut", url: "khatta_flow.mp3" },
+        { title: "Vibrate", artist: "Audio", url: "vibrate.mp3" },
+        { title: "Prarthana", artist: "KR$NA", url: "Prarthana.mp3" },
+        { title: "Joota Japani", artist: "Audio", url: "joota_japani.mp3" },
+        { title: "Hola Amigo", artist: "KR$NA", url: "Hola_amigo.mp3" },
+        { title: "Knock Knock", artist: "Audio", url: "knock_knock.mp3" },
+        { title: "Kaali Kaali Zulfo", artist: "Local Audio", url: "kaali_kaali_zulfo.mp3" },
+        { title: "Humdam Aditya", artist: "Local Audio", url: "humdam_Aditya.mp3" },
+        { title: "Samjho Na", artist: "Local Audio", url: "samjho_na.mp3" },
+        { title: "Paaro", artist: "Local Audio", url: "paaro.mp3" },
+        { title: "Suroor Music", artist: "Local Audio", url: "suroor_music.mp3" },
+        { title: "Ye Jo Halka Halka", artist: "Local Audio", url: "ye_jo_halka_halka.mp3" },
+        { title: "Ek Dhun", artist: "Local Audio", url: "ek_dhun.mp3" },
+        { title: "Saiyara Tu To", artist: "Local Audio", url: "saiyara_tu_to.mp3" },
+        { title: "Chahun Mai Ya Na", artist: "Local Audio", url: "chahun_mai_ya_na.mp3" },
+        { title: "Milne Hai Mujhse Aayi", artist: "Local Audio", url: "milne_hai_mujhse_aayi.mp3" },
+        { title: "Piya Aaye Na", artist: "Local Audio", url: "piya_aaye_na.mp3" },
+        { title: "Piya Ji Ke Muski", artist: "Local Audio", url: "piya_ji_ke_muski.mp3" },
+        { title: "Raja Rangbaaz", artist: "Local Audio", url: "raja_rangbaaz.mp3" },
+        { title: "Pawan Singh Babuan", artist: "Local Audio", url: "pawan_singh_babuan.mp3" },
+        { title: "Saj Ke Sawar Ke", artist: "Local Audio", url: "saj_ke_sawar_ke.mp3" },
+        { title: "Raja Ji Ke Dilwa", artist: "Local Audio", url: "raja_ji_ke_dilwa.mp3" },
+        { title: "Sadiya", artist: "Local Audio", url: "sadiya.mp3" },
+        { title: "Kamariya Dole Dole", artist: "Local Audio", url: "kamariya_dole_dole.mp3" },
+        { title: "Mai Vohe", artist: "Masoom Sharma", url: "mai_vohe.mp3" }
+      ];
+
+      /* Build Playlist Items */
+      const tracklistEl = $("tracklist");
+      tracks.forEach((track, index) => {
+        const div = document.createElement("div");
+        div.className = "track";
+        div.innerHTML = `
+          <span class="num">${String(index + 1).padStart(2, '0')}</span>
+          <div class="meta">
+            <div class="name">${track.title}</div>
+            <div class="artist">${track.artist}</div>
+          </div>
+        `;
+        div.onclick = () => {
+          current = index;
+          loadTrack(current, true);
+          drawer.classList.remove("open");
+        };
+        tracklistEl.appendChild(div);
+      });
+
+      /* Load & Crossfade Audio */
+      function loadTrack(i, autoPlay = false) {
+        const t = tracks[i];
+        const currAudio = getActiveAudio();
+        const prevAudio = getInactiveAudio();
+
+        currAudio.src = t.url;
+        $("trackTitle").textContent = t.title;
+        $("trackArtist").textContent = t.artist;
+        
+        document.querySelectorAll(".track").forEach((el, idx) => {
+          el.classList.toggle("active", idx === i);
+        });
+
+        if (autoPlay) {
+          if (fadeInterval) clearInterval(fadeInterval);
+
+          prevAudio.volume = 1;
+          currAudio.volume = 0;
+          currAudio.play().then(() => {
+            let fadeDuration = 2000; 
+            let steps = 20;
+            let stepTime = fadeDuration / steps;
+            let volumeStep = 1 / steps;
+
+            fadeInterval = setInterval(() => {
+              if (prevAudio.volume > volumeStep) {
+                prevAudio.volume -= volumeStep;
+                if (currAudio.volume < 1 - volumeStep) {
+                  currAudio.volume += volumeStep;
+                }
+              } else {
+                prevAudio.pause();
+                prevAudio.volume = 1;
+                currAudio.volume = 1;
+                activePlayer = activePlayer === 1 ? 2 : 1;
+                clearInterval(fadeInterval);
+                fadeInterval = null;
+              }
+            }, stepTime);
+          }).catch(() => {});
+
+          $("art").classList.add("spin");
+          updatePlayBtn(true);
+        }
+      }
+
+      audio1.ontimeupdate = () => handleTimeUpdate(audio1);
+      audio2.ontimeupdate = () => handleTimeUpdate(audio2);
+
+      function handleTimeUpdate(player) {
+        if (player === getActiveAudio() && player.duration) {
+          $("progress").value = (player.currentTime / player.duration) * 100;
+          $("time").textContent = formatTime(player.currentTime) + " / " + formatTime(player.duration);
+
+          if (player.duration - player.currentTime <= 2.0 && !player.dataset.fading) {
+            player.dataset.fading = "true";
+            if (tracks.length > 0) {
+              current = (current + 1) % tracks.length;
+              loadTrack(current, true);
+            }
+          }
+        }
+      }
+
+      audio1.onended = () => { audio1.dataset.fading = ""; };
+      audio2.onended = () => { audio2.dataset.fading = ""; };
+
+      /* Play/Pause Button */
+      const playBtn = $("playBtn");
+      playBtn.onclick = () => {
+        const curr = getActiveAudio();
+        if (current === -1 && tracks.length > 0) {
+          current = 0;
+          loadTrack(current, true);
+          return;
+        }
+        if (curr.paused) {
+          curr.play();
+          $("art").classList.add("spin");
+          updatePlayBtn(true);
+        } else {
+          curr.pause();
+          $("art").classList.remove("spin");
+          updatePlayBtn(false);
+        }
+      };
+
+      function updatePlayBtn(isPlaying) {
+        const icon = $("playIcon");
+        if (icon) {
+          icon.innerHTML = isPlaying 
+            ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>' 
+            : '<path d="M8 5v14l11-7z"/>';
+        }
+      }
+
+      /* Seek Control */
+      $("progress").oninput = (e) => {
+        const curr = getActiveAudio();
+        if (curr.duration) {
+          curr.currentTime = (e.target.value / 100) * curr.duration;
+        }
+      };
+
+      /* Next / Prev Controls */
+      $("nextBtn").onclick = () => {
+        if (tracks.length === 0) return;
         current = (current + 1) % tracks.length;
         loadTrack(current, true);
+      };
+
+      $("prevBtn").onclick = () => {
+        if (tracks.length === 0) return;
+        current = (current - 1 + tracks.length) % tracks.length;
+        loadTrack(current, true);
+      };
+
+      function showToast(msg) {
+        const t = $("toast");
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2500);
       }
-    }
-  }
-}
-
-audio1.onended = () => { audio1.dataset.fading = ""; };
-audio2.onended = () => { audio2.dataset.fading = ""; };
-
-const playBtn = $("playBtn");
-playBtn.onclick = () => {
-  const curr = getActiveAudio();
-  if (current === -1 && tracks.length > 0) {
-    current = 0;
-    loadTrack(current, true);
-    return;
-  }
-  if (curr.paused) {
-    curr.play();
-    $("art").classList.add("spin");
-    updatePlayBtn(true);
-  } else {
-    curr.pause();
-    $("art").classList.remove("spin");
-    updatePlayBtn(false);
-  }
-};
-
-function updatePlayBtn(isPlaying) {
-  const icon = $("playIcon");
-  if (icon) {
-    if (isPlaying) {
-      icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
-    } else {
-      icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-    }
-  }
-}
-
-$("progress").oninput = (e) => {
-  const curr = getActiveAudio();
-  if (curr.duration) {
-    curr.currentTime = (e.target.value / 100) * curr.duration;
-  }
-};
-
-$("nextBtn").onclick = () => {
-  if (tracks.length === 0) return;
-  current = (current + 1) % tracks.length;
-  loadTrack(current, true);
-};
-
-$("prevBtn").onclick = () => {
-  if (tracks.length === 0) return;
-  current = (current - 1 + tracks.length) % tracks.length;
-  loadTrack(current, true);
-};
-
-function showToast(msg) {
-  const t = $("toast");
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
-}
-</script>
+    });
+  </script>
+</body>
+</html>
