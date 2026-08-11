@@ -219,7 +219,8 @@ const tracks = [
   { title: "Saj Ke Sawar Ke", artist: "Local Audio", url: "saj_ke_sawar_ke.mp3" },
   { title: "Raja Ji Ke Dilwa", artist: "Local Audio", url: "raja_ji_ke_dilwa.mp3" },
   { title: "Sadiya", artist: "Local Audio", url: "sadiya.mp3" },
-  { title: "Kamariya Dole Dole", artist: "Local Audio", url: "kamariya_dole_dole.mp3" }
+  { title: "Kamariya Dole Dole", artist: "Local Audio", url: "kamariya_dole_dole.mp3" },
+  { title: "mai vohe", artist: "Masoom Sharma ", url: "mai_vohe.mp3" }
   ]; // Render tracks into the playlist drawer
 const tracklistEl = $("tracklist");
 tracks.forEach((track, index) => {
@@ -243,7 +244,90 @@ tracks.forEach((track, index) => {
   tracklistEl.appendChild(div);
 });
 
-function loadTrack(i) {
+let current = -1;
+let activePlayer = 1; // Tracks which audio element is currently live
+
+const audio1 = $("playerAudio1");
+const audio2 = $("playerAudio2");
+
+// Helper to get the currently active audio element
+function getActiveAudio() {
+  return activePlayer === 1 ? audio1 : audio2;
+}
+
+// Helper to get the background (fading out) audio element
+function getInactiveAudio() {
+  return activePlayer === 1 ? audio2 : audio1;
+}
+
+function loadTrack(i, autoPlay = false) {
+  const t = tracks[i];
+  const currAudio = getActiveAudio();
+  const prevAudio = getInactiveAudio();
+
+  currAudio.src = t.url;
+  $("trackTitle").textContent = t.title;
+  $("trackArtist").textContent = t.artist;
+  
+  document.querySelectorAll(".track").forEach((el, idx) => {
+    el.classList.toggle("active", idx === i);
+  });
+
+  if (autoPlay) {
+    // Crossfade transition logic
+    prevAudio.volume = 1;
+    currAudio.volume = 0;
+    currAudio.play().then(() => {
+      // Fade out old track and fade in new track over 2 seconds
+      let fadeDuration = 2000; 
+      let steps = 20;
+      let stepTime = fadeDuration / steps;
+      let volumeStep = 1 / steps;
+
+      let fadeInterval = setInterval(() => {
+        if (prevAudio.volume > volumeStep) {
+          prevAudio.volume -= volumeStep;
+          if (currAudio.volume < 1 - volumeStep) {
+            currAudio.volume += volumeStep;
+          }
+        } else {
+          prevAudio.pause();
+          prevAudio.volume = 1;
+          currAudio.volume = 1;
+          activePlayer = activePlayer === 1 ? 2 : 1; // Switch active player
+          clearInterval(fadeInterval);
+        }
+      }, stepTime);
+    }).catch(() => {});
+
+    $("art").classList.add("spin");
+    updatePlayBtn(true);
+  }
+}
+
+// Trigger smooth auto-advance when a song is near its end or finished
+audio1.ontimeupdate = () => handleTimeUpdate(audio1);
+audio2.ontimeupdate = () => handleTimeUpdate(audio2);
+
+function handleTimeUpdate(player) {
+  if (player === getActiveAudio() && player.duration) {
+    $("progress").value = (player.currentTime / player.duration) * 100;
+    $("time").textContent = formatTime(player.currentTime) + " / " + formatTime(player.duration);
+
+    // Automatically transition to the next song 2 seconds BEFORE the current one ends for a seamless crossfade
+    if (player.duration - player.currentTime <= 2.0 && !player.dataset.fading) {
+      player.dataset.fading = "true";
+      if (tracks.length > 0) {
+        current = (current + 1) % tracks.length;
+        loadTrack(current, true);
+      }
+    }
+  }
+}
+
+// Reset fading flag when tracks change
+audio1.onended = () => { audio1.dataset.fading = ""; };
+audio2.onended = () => { audio2.dataset.fading = ""; }; {
   const t = tracks[i];
   playerAudio.src = t.url;
   $("trackTitle").textContent = t.title;
