@@ -2,6 +2,7 @@
 function $(id){return document.getElementById(id)}
 let current = -1;
 let activePlayer = 1;
+let fadeInterval = null; // Track current fade interval to prevent race conditions
 
 const audio1 = $("playerAudio1");
 const audio2 = $("playerAudio2");
@@ -167,6 +168,8 @@ function loadTrack(i, autoPlay = false) {
   });
 
   if (autoPlay) {
+    if (fadeInterval) clearInterval(fadeInterval); // Clear any ongoing fade to prevent race conditions
+
     prevAudio.volume = 1;
     currAudio.volume = 0;
     currAudio.play().then(() => {
@@ -175,7 +178,7 @@ function loadTrack(i, autoPlay = false) {
       let stepTime = fadeDuration / steps;
       let volumeStep = 1 / steps;
 
-      let fadeInterval = setInterval(() => {
+      fadeInterval = setInterval(() => {
         if (prevAudio.volume > volumeStep) {
           prevAudio.volume -= volumeStep;
           if (currAudio.volume < 1 - volumeStep) {
@@ -187,6 +190,7 @@ function loadTrack(i, autoPlay = false) {
           currAudio.volume = 1;
           activePlayer = activePlayer === 1 ? 2 : 1;
           clearInterval(fadeInterval);
+          fadeInterval = null;
         }
       }, stepTime);
     }).catch(() => {});
@@ -238,10 +242,12 @@ playBtn.onclick = () => {
 
 function updatePlayBtn(isPlaying) {
   const icon = $("playIcon");
-  if (isPlaying) {
-    icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
-  } else {
-    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  if (icon) {
+    if (isPlaying) {
+      icon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+    } else {
+      icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    }
   }
 }
 
@@ -266,8 +272,9 @@ $("prevBtn").onclick = () => {
 
 function showToast(msg) {
   const t = $("toast");
+  if (!t) return;
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2500);
 }
-  </script>
+</script>
