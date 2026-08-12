@@ -101,6 +101,17 @@ button{color:inherit}
     <h2>THAKUR ADITYA'S PLAYLIST</h2>
     <button id="closeDrawer">✕</button>
   </header>
+  
+  <!-- SEARCH BAR ADDED HERE -->
+  <div style="padding: 10px 18px; border-bottom: 1px solid #262728;">
+    <input 
+      type="text" 
+      id="searchInput" 
+      placeholder="Search song or artist..." 
+      style="width: 100%; padding: 8px 12px; background: #141516; border: 1px solid #3a3d40; color: var(--cream); border-radius: 3px; outline: none;"
+    >
+  </div>
+
   <div id="tracklist"></div>
   <footer>Created with ❤️ by Thakur Aditya</footer>
 </div>
@@ -261,7 +272,7 @@ const tracks = [
  { title: "TUTOR Song", artist: "Cheema Y", url: "TUTOR_Song_CheemaY.mp3" },
  { title: "Police", artist: "Cheema Y", url: "Police_CheemaY.mp3" },
  { title: "TRUMP", artist: "Cheema Y", url: "TRUMP_CheemaY.mp3" },
- { title: "Snake", artist: "Cheema Y", url: "Snake_cheemaY.mp3" },
+  { title: "Snake", artist: "Cheema Y", url: "Snake_cheemaY.mp3" },
  { title: "Jackpot", artist: "Cheema Y", url: "Jackpot_CheemaY.mp3" },
  { title: "Dard Dilo Ke", artist: "Mohammed Irfan", url: "Dard_Dilo_ke.mp3" },
  { title: "Chunnari Chunnari", artist: "Anuradha Sriram, Abhijeet Bhattacharya", url: "Chunnari_Chunnari.mp3" },
@@ -417,8 +428,7 @@ const tracks = [
   { title: "Vibrate", artist: "Audio", url: "vibrate.mp3" },
   { title: "Prarthana", artist: "KR$NA", url: "Prarthana.mp3" }
 ];
-
-function loadTrack(index) {
+  function loadTrack(index) {
   if (index < 0 || index >= tracks.length) return;
   current = index;
   const t = tracks[current];
@@ -435,23 +445,38 @@ function loadTrack(index) {
   });
 }
 
-function renderPlaylist() {
+function renderPlaylist(query = "") {
   const list = $("tracklist");
   list.innerHTML = "";
+  
+  const cleanQuery = query.toLowerCase().trim();
+
   tracks.forEach((t, i) => {
-    const div = document.createElement("div");
-    div.className = "track";
-    div.innerHTML = `
-      <span class="num">${i + 1}</span>
-      <div class="meta">
-        <div class="name">${t.title}</div>
-        <div class="artist">${t.artist}</div>
-      </div>
-    `;
-    div.onclick = () => loadTrack(i);
-    list.appendChild(div);
+    const matchesTitle = t.title.toLowerCase().includes(cleanQuery);
+    const matchesArtist = t.artist.toLowerCase().includes(cleanQuery);
+    if (matchesTitle || matchesArtist) {
+      const div = document.createElement("div");
+      div.className = "track" + (i === current ? " active" : "");
+      div.innerHTML = `
+        <span class="num">${i + 1}</span>
+        <div class="meta">
+          <div class="name">${t.title}</div>
+          <div class="artist">${t.artist}</div>
+        </div>
+      `;
+      div.onclick = () => loadTrack(i);
+      list.appendChild(div);
+    }
   });
+
+  if (list.children.length === 0) {
+    list.innerHTML = `<div style="padding: 18px; opacity: 0.5; text-align: center;">No tracks found</div>`;
+  }
 }
+
+$("searchInput").addEventListener("input", (e) => {
+  renderPlaylist(e.target.value);
+});
 
 $("playBtn").onclick = () => {
   if (current === -1 && tracks.length > 0) {
@@ -480,6 +505,11 @@ audio.ontimeupdate = () => {
 };
 
 $("progress").oninput = (e) => {
+  if (audio.duration) {
+    audio.currentTime = (e.target.value / 100) * audio.duration;
+  }
+};
+  $("progress").oninput = (e) => {
   if (audio.duration) {
     audio.currentTime = (e.target.value / 100) * audio.duration;
   }
