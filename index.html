@@ -427,7 +427,29 @@ $("progress").oninput = (e) => {
 };
 
 audio.onended = () => loadTrack((current + 1) % tracks.length);
+// Toast Notification
+let toastTimeout;
+function showToast(msg) {
+  const toast = $("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.remove("show"), 3000);
+}
 
+// Play / Pause Icon Update
+const playIconSVG = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const pauseIconSVG = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
+audio.onplay = () => {
+  $("art").classList.add("spin");
+  $("playBtn").innerHTML = pauseIconSVG;
+};
+
+audio.onpause = () => {
+  $("art").classList.remove("spin");
+  $("playBtn").innerHTML = playIconSVG;
+};
 renderPlaylist();
 </script>
 </body>
