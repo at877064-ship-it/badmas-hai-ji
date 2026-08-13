@@ -176,6 +176,7 @@ $("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribut
 function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
 
 const tracks = [
+  { title: "Jaan Se Guzarte", artist: "Audio", url: "jaan_se_guzarte.mp3" },
   { title: "Bewafa", artist: "Imran Khan", url: "Bewafa.mp3" },
   { title: "Mohabbat Ka Gum Hai", artist: "Audio", url: "Mohabbat_Ka_Gum_Hai.mp3" },
   { title: "S_T_F_U", artist: "AP Dhillon", url: "S_T_F_U _AP_Dhillon.mp3" },
