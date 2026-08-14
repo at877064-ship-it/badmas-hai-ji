@@ -257,12 +257,12 @@ const shayaris = [
   "दिल भर गया हो तो साफ़ मना कर दो, यूँ झूठी तसल्लियों में रखा न करो।",
   "रास नहीं आई हमें किसी की मोहब्बत, सबने अपना बनाकर आखिर छोड़ ही दिया।",
   "हम भी कभी मुस्कुराते थे बेपरवाह होकर, अब तो वजह ढूंढनी पड़ती है।",
-  "अजीब खेल है इस जिंदगी का, जिसे जितना चाहा वही दूर चला गया।"
-  "अगर कोई न मिले तोह किस्मत से गिला नहीं करते, अक्सर लोग मिलकर भी मिला नहीं करते"
-  "खामोश चेहरे पर हज़ारों पहरे होते है हस्ती आँखों में भी ज़ख़्म गहरे होते है"
-  "और तो क्या था बेचने के लि अपनी आँखों के ख़्वाब बेचे हैं"
- " यूँ जो तकता है आसमान को तू कोई रहता है आसमान में क्या"
- " जो गुज़ारी न जा सकी हम से हम ने वो ज़िंदगी गुज़ारी है "
+  "अजीब खेल है इस जिंदगी का, जिसे जितना चाहा वही दूर चला गया।",
+  "अगर कोई न मिले तोह किस्मत से गिला नहीं करते, अक्सर लोग मिलकर भी मिला नहीं करते",
+  "खामोश चेहरे पर हज़ारों पहरे होते है हस्ती आँखों में भी ज़ख़्म गहरे होते है",
+  "और तो क्या था बेचने के लि अपनी आँखों के ख़्वाब बेचे हैं",
+  "यूँ जो तकता है आसमान को तू कोई रहता है आसमान में क्या",
+  "जो गुज़ारी न जा सकी हम से हम ने वो ज़िंदगी गुज़ारी है"
 ];
 function rotateShayari() {
   const el = $("shayariText");
@@ -714,7 +714,7 @@ function loadTrack(index) {
   const t = tracks[current];
   audio.src = t.url;
   $("trackTitle").textContent = t.title;
-  $("trackArtist").textContent = t.artist;
+  $("trackArtist").textContent = t.artist || "Unknown Artist";
   
   const items = document.querySelectorAll(".track");
   items.forEach((item) => {
@@ -737,7 +737,7 @@ function renderPlaylist(query = "") {
   tracks.forEach((t, i) => {
     const matchesCategory = (currentCategory === "All" || t.category === currentCategory);
     const matchesTitle = t.title.toLowerCase().includes(cleanQuery);
-    const matchesArtist = t.artist.toLowerCase().includes(cleanQuery);
+    const matchesArtist = (t.artist || "").toLowerCase().includes(cleanQuery);
 
     if (matchesCategory && (matchesTitle || matchesArtist)) {
       const div = document.createElement("div");
@@ -747,7 +747,7 @@ function renderPlaylist(query = "") {
         <span class="num">${i + 1}</span>
         <div class="meta">
           <div class="name">${t.title}</div>
-          <div class="artist">${t.artist}</div>
+          <div class="artist">${t.artist || "Unknown Artist"}</div>
         </div>
       `;
       div.onclick = () => loadTrack(i);
