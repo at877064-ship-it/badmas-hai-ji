@@ -24,7 +24,7 @@ button{color:inherit}
 #liveClock {
   position: fixed;
   top: 10px;
-  left: 24px;
+  left: 10px;
   z-index: 20;
   background: rgba(10, 11, 12, 0.75);
   border: 1px solid rgba(217, 164, 65, 0.4);
@@ -40,10 +40,13 @@ button{color:inherit}
 
 /* Shayari Display Box */
 #shayariContainer {
-  position: relative;
+  position: fixed;
   z-index: 5;
-  width: min(350px, 90vw);
-  margin: 220px auto 0;
+  width: 90vw;
+  max-width:550px;
+  bottom: 75px;  
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
   background: rgba(10, 11, 12, 0.65);
   border: 1px solid rgba(217, 164, 65, 0.3);
