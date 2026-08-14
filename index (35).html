@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090a0b">
+<meta name="description" content="BADMAS HAI JI — private jukebox">
+<title>BADMAS HAI JI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- CUSTOM SHORTCUT ICON LINKS -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--steel-1:#3a3d40;--steel-2:#1c1e20;--steel-3:#0a0b0c;--amber:#d9a441;--amber-dim:#8a6a2c;--cream:#e9e6df;--line:rgba(233,230,223,.12);--danger:#c0453a}
+html,body{margin:0;min-height:100vh;font-family:'Rajdhani',sans-serif;}
+body{overflow-x:hidden;background:#0d0f12 url('new.bg.jpg.png.mp4') center/cover no-repeat fixed;}
+button,input{font:inherit}
+button{color:inherit}
+
+/* Live Time Badge */
+#liveClock {
+  position: fixed;
+  top: 15px;
+  left: 10px;
+  z-index: 20;
+  background: rgba(10, 11, 12, 0.75);
+  border: 1px solid rgba(217, 164, 65, 0.4);
+  color: var(--amber);
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-family: 'Teko', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Shayari Display Box */
+#shayariContainer {
+  position: fixed;
+  z-index: 5;
+  width: 90vw;
+  max-width:550px;
+  bottom: 75px;  
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  background: rgba(10, 11, 12, 0.65);
+  border: 1px solid rgba(217, 164, 65, 0.3);
+  border-radius: 6px;
+  padding: 16px 22px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+#shayariText {
+  font-size: clamp(1.05rem, 3.5vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--cream);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease-in-out;
+  opacity: 1;
+}
+#shayariText.fade {
+  opacity: 0;
+}
+
+#lock{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at center,#1b1c1d 0%,#050506 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;color:var(--cream);transition:opacity .5s,visibility .5s;padding:20px}
+#lock.hidden{opacity:0;visibility:hidden;pointer-events:none}
+#lock h1{font-family:'Bebas Neue';font-size:clamp(2.1rem,8vw,3.4rem);letter-spacing:4px;margin:0;color:var(--amber);text-align:center}
+#lock p{opacity:.6;margin:0 0 6px;font-size:1rem;letter-spacing:1px;text-align:center}
+#lock input{background:#141516;border:1px solid #3a3d40;color:var(--cream);padding:12px 16px;border-radius:3px;font-size:1.1rem;width:240px;text-align:center;letter-spacing:3px;outline:none}
+#lock input:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(217,164,65,.08)}
+#lock button{background:linear-gradient(180deg,#4a4d50,#232527);border:1px solid #5a5d60;color:var(--amber);font-weight:700;font-size:1rem;padding:12px 30px;border-radius:3px;cursor:pointer;letter-spacing:2px;text-transform:uppercase}
+#lock button:active{transform:translateY(1px)}
+#lockError{color:var(--danger);font-size:.85rem;height:14px}
+#scene{position:fixed;inset:0;z-index:-2;background:radial-gradient(ellipse at 50% 30%,rgba(42,43,44,.8) 0%,rgba(16,17,18,.9) 55%,rgba(5,5,6,.95) 100%)}
+#bgVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-3}
+.fabric{position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.015) 0 1px,transparent 1px 3px),repeating-linear-gradient(25deg,rgba(0,0,0,.25) 0 1px,transparent 1px 4px)}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 30%,rgba(0,0,0,.72) 100%)}
+.rail{position:absolute;background:repeating-linear-gradient(90deg,rgba(233,230,223,.06) 0 2px,transparent 2px 10px)}
+#rail1{top:8%;left:-5%;width:60%;height:14px;transform:rotate(-7deg)}
+#rail2{bottom:12%;right:-5%;width:55%;height:14px;transform:rotate(6deg)}
+.bolt{position:absolute;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#cfd2d4,#55585a 70%);box-shadow:0 0 4px rgba(0,0,0,.6)}
+.hud-corner{position:absolute;width:26px;height:26px;border-color:var(--amber-dim);opacity:.55}
+.hud-corner.tl{top:22px;left:22px;border-top:2px solid;border-left:2px solid}.hud-corner.tr{top:22px;right:22px;border-top:2px solid;border-right:2px solid}.hud-corner.bl{bottom:22px;left:22px;border-bottom:2px solid;border-left:2px solid}.hud-corner.br{bottom:22px;right:22px;border-bottom:2px solid;border-right:2px solid}
+#headline{position:relative;text-align:center;z-index:5;width:92%;margin:8vh auto 10px}
+#headline h1{margin:0;font-family:'Bebas Neue';font-size:clamp(2.5rem,8vw,4.5rem);line-height:.95;color:var(--cream);letter-spacing:4px;text-shadow:0 2px 0 #000,0 0 26px rgba(217,164,65,.25),0 14px 30px rgba(0,0,0,.6)}
+#headline .rule{width:120px;height:2px;margin:10px auto 12px;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
+#headline .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(10,11,12,.6);border:1px solid rgba(217,164,65,.4);color:var(--amber);padding:6px 16px;border-radius:2px;font-size:.8rem;letter-spacing:3px;text-transform:uppercase;backdrop-filter:blur(3px)}
+.dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80}
+#soundBadge{position:fixed;top:44%;left:50%;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:12px;background:rgba(217,164,65,.14);border:1px solid rgba(217,164,65,.55);border-radius:999px;padding:8px 22px 8px 10px;cursor:pointer;backdrop-filter:blur(4px);box-shadow:0 0 0 1px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.4);transition:.15s}
+#soundBadge:hover{background:rgba(217,164,65,.22)}#soundBadge:active{transform:translateX(-50%) scale(.97)}
+#soundIcon{width:34px;height:34px;border-radius:50%;background:rgba(217,164,65,.25);display:flex;align-items:center;justify-content:center;flex:none}
+#soundIcon svg{width:19px;height:19px;fill:var(--cream)}
+.soundText{display:flex;flex-direction:column;line-height:1.15;text-align:left}.soundText .hi{font-weight:700;font-size:1.15rem}.soundText .en{font-family:'Bebas Neue';font-size:.8rem;letter-spacing:3px;color:var(--amber)}
+#plBtn{position:fixed;top:24px;right:24px;z-index:20;background:linear-gradient(180deg,#3a3d40,#1c1e20);border:1px solid #4a4d50;color:var(--cream);width:46px;height:46px;border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#plBtn svg{width:20px;height:20px;fill:var(--amber)}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:rgba(10,11,12,.97);border-left:1px solid #333;z-index:40;transform:translateX(100%);transition:transform .35s;display:flex;flex-direction:column;backdrop-filter:blur(8px)}
+#drawer.open{transform:translateX(0)}
+#drawer header{padding:20px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #262728}
+#drawer header h2{margin:0;color:var(--amber);font-family:'Bebas Neue';font-size:1.5rem;letter-spacing:2px}
+#drawer header button{background:none;border:none;color:var(--cream);font-size:1.4rem;cursor:pointer}
+
+/* Category Folder Tabs */
+#categoryTabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 18px 6px;
+  border-bottom: 1px solid #262728;
+  scrollbar-width: none;
+}
+#categoryTabs::-webkit-scrollbar { display: none; }
+.tabBtn {
+  background: #18191a;
+  border: 1px solid #3a3d40;
+  color: var(--cream);
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s;
+}
+.tabBtn:hover, .tabBtn.active {
+  background: var(--amber);
+  color: #0a0b0c;
+  border-color: var(--amber);
+  font-weight: 700;
+}
+
+#tracklist{overflow-y:auto;flex:1;padding:8px 0}.track{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;border-bottom:1px solid #1c1d1e;color:var(--cream)}
+.track:hover,.track.active{background:rgba(217,164,65,.1)}.track .num{width:24px;color:var(--amber);font-weight:700;font-family:'Teko'}
+.track .meta{flex:1;min-width:0}.track .name,.track .artist{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track .name{font-size:.98rem;font-weight:600}.track .artist{font-size:.75rem;opacity:.55}
+.uploadBtn{background:rgba(217,164,65,.12);border:1px solid rgba(217,164,65,.4);color:var(--amber);font-size:.68rem;padding:5px 9px;border-radius:2px;cursor:pointer}
+#drawer footer{padding:14px 18px;font-size:.72rem;color:rgba(233,230,223,.4);border-top:1px solid #1c1d1e;line-height:1.4}
+#player{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:30;width:min(700px,94vw);background:linear-gradient(160deg,#3f4245,#212325 55%,#131415);border:1px solid #4a4d50;border-radius:8px;display:flex;align-items:center;gap:14px;padding:10px 18px 10px 10px;box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
+#art{width:56px;height:56px;border-radius:6px;flex:none;background:radial-gradient(circle at 35% 35%,#2a2c2d,#0a0b0c 70%);border:2px solid #55585a;display:flex;align-items:center;justify-content:center;position:relative;animation:spin 6s linear infinite paused}
+#art.spin{animation-play-state:running}@keyframes spin{to{transform:rotate(360deg)}}#art:after{content:'';width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid #0a0b0c}
+#meta{flex:1;min-width:0}.title,.artist{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:700;font-size:1rem}.artist{font-size:.8rem;opacity:.6}
+#progressRow{display:flex;align-items:center;gap:8px;margin-top:5px}#progress{appearance:none;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(233,230,223,.15);flex:1;cursor:pointer}#progress::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--amber)}#time{font-size:.7rem;opacity:.55;white-space:nowrap}
+#controls{display:flex;align-items:center;gap:4px;flex:none}#controls button{background:none;border:none;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:bold;color:var(--amber)}#controls svg{width:18px;height:18px;fill:var(--cream)}
+#playBtn{width:42px!important;height:42px!important;border-radius:50%;background:linear-gradient(180deg,var(--amber),#a67a2e);box-shadow:0 3px 8px rgba(0,0,0,.4)}#playBtn svg{width:20px;height:20px;fill:#141516}
+#toast{position:fixed;left:50%;bottom:105px;transform:translate(-50%,15px);z-index:80;background:#141516;border:1px solid #45484a;color:var(--cream);padding:9px 14px;border-radius:4px;opacity:0;pointer-events:none;transition:.25s;font-size:.85rem}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:560px){#headline{margin-top:7vh}#soundBadge{top:43%}#player{bottom:10px;padding:8px 10px 8px 8px;gap:8px}#art{width:46px;height:46px}#meta .title{font-size:.88rem}#controls{gap:1px}#controls button:not(#playBtn){display:flex}#playBtn{width:38px!important;height:38px!important}#liveClock{top:12px;left:12px;padding:5px 10px;font-size:1rem}#plBtn{top:12px;right:12px;width:38px;height:38px}}
+</style>
+</head>
+<body>
+
+<div id="liveClock">00:00:00 AM</div>
+
+<div id="lock">
+  <h1>BADMAS HAI JI</h1>
+  <p>Private jukebox — enter the code to get in</p>
+  <input id="lockInput" type="password" placeholder="• • • •" maxlength="20" autocomplete="off">
+  <div id="lockError"></div><button id="lockBtn">Unlock</button>
+</div>
+
+<div id="scene">
+  <video autoplay muted loop playsinline id="bgVideo">
+    <source src="new.bg.jpg.png.mp4" type="video/mp4">
+  </video>
+  <div class="fabric"></div>
+  <div class="rail" id="rail1"></div>
+  <div class="rail" id="rail2"></div>
+  <div class="bolt" style="top:20%;left:12%"></div>
+  <div class="bolt" style="top:30%;left:85%"></div>
+  <div class="bolt" style="bottom:18%;left:20%"></div>
+  <div class="bolt" style="bottom:28%;right:16%"></div>
+  <div class="vignette"></div>
+  <div class="hud-corner tl"></div>
+  <div class="hud-corner tr"></div>
+  <div class="hud-corner bl"></div>
+  <div class="hud-corner br"></div>
+</div>
+<button id="soundBadge" title="Upload and play a sound">
+<span id="soundIcon"><svg viewBox="0 0 24 24"><path d="M2 13.5h9.5V12H15v-1.2c0-.7.6-1.3 1.3-1.3H19c1.1 0 2 .9 2 2v1c0 .8-.5 1.5-1.2 1.8l-2.3.9v1.3c0 .5-.4 1-1 1H12v1.5c0 .5-.4 1-1 1H8.5v-2.5H6c-.8 0-1.5-.3-2-.9L2 15v-1.5z"/><rect x="10.5" y="9.3" width="2" height="2.7"/></svg></span>
+<span class="soundText"><span class="hi">बदमाश</span><span class="en">BADMAS</span></span>
+<input type="file" id="soundFile" accept="audio/*" hidden></button>
+<audio id="badgeAudio"></audio>
+<audio id="playerAudio"></audio>
+
+<div id="headline">
+  <h1>BADMAS HAI JI • BY THAKUR ADITYA</h1>
+  <div class="rule"></div>
+  <div class="badge"><span class="dot"></span><span>PRIVATE JUKEBOX</span></div>
+</div>
+
+<div id="shayariContainer">
+  <div id="shayariText">दिल से खेल कर चले गए, अब सुकून की तलाश है...</div>
+</div>
+
+<button id="plBtn" title="Open playlist" aria-label="Open playlist"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg></button>
+
+<div id="drawer" aria-hidden="true">
+  <header>
+    <h2>THAKUR ADITYA'S PLAYLIST</h2>
+    <button id="closeDrawer">✕</button>
+  </header>
+  
+  <div id="categoryTabs">
+    <button class="tabBtn active" data-cat="All">All Songs</button>
+    <button class="tabBtn" data-cat="Gazal">Ghazal</button>
+    <button class="tabBtn" data-cat="Haryanavi">Haryanvi</button>
+    <button class="tabBtn" data-cat="Bollywood">Bollywood</button>
+    <button class="tabBtn" data-cat="Hip-hop">Hip-Hop</button>
+    <button class="tabBtn" data-cat="English">English</button>
+    <button class="tabBtn" data-cat="Punjabi">Punjabi</button>
+  </div>
+
+  <div style="padding: 10px 18px; border-bottom: 1px solid #262728;">
+    <input 
+      type="text" 
+      id="searchInput" 
+      placeholder="Search song or artist..." 
+      style="width: 100%; padding: 8px 12px; background: #141516; border: 1px solid #3a3d40; color: var(--cream); border-radius: 3px; outline: none;"
+    >
+  </div>
+
+  <div id="tracklist"></div>
+  <footer>Created with ❤️ by Thakur Aditya</footer>
+</div>
+
+<div id="player">
+<div id="art"></div>
+<div id="meta"><div class="title" id="trackTitle">No track selected</div><div class="artist" id="trackArtist">Upload a song to begin</div>
+<div id="progressRow"><input id="progress" type="range" min="0" max="100" value="0"><span id="time">0:00 / 0:00</span></div></div>
+<div id="controls">
+<button id="prevBtn" title="Previous Track"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zm3 7 10-7v14z"/></svg></button>
+<button id="rewindBtn" title="-10 Seconds">-10s</button>
+<button id="playBtn" title="Play/Pause"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+<button id="forwardBtn" title="+10 Seconds">+10s</button>
+<button id="nextBtn" title="Next Track"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+function $(id){return document.getElementById(id)}
+let current = -1;
+let currentCategory = "All";
+const audio = $("playerAudio");
+
+// --- Live Time Display ---
+function updateClock(){
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  $("liveClock").textContent = `${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// --- Hindi Sad Shayaris (15 Sec Rotation) ---
+const shayaris = [
+  "मुस्कुराने की आदत भी कितनी अजीब है, दिल उदास हो फिर भी चेहरे पर सजती है।",
+  "किस्मत ने जैसा चाहा वैसा ढल गए हम, बहुत संभल कर चले फिर भी फिसल गए हम।",
+  "दर्द बयां करने की अब आदत नहीं रही, चुप रहकर सह जाना ही अब हुनर लगता है।",
+  "कुछ घाव ऐसे होते हैं जो दिखाई नहीं देते, मगर दर्द बेहिसाब दे जाते हैं।",
+  "खामोशियां ही बेहतर हैं, शब्दों से अक्सर लोग रूठ जाया करते हैं।",
+  "अब कोई उम्मीद नहीं किसी से, जो चल रहा है उसे चलने दो।",
+  "दिल भर गया हो तो साफ़ मना कर दो, यूँ झूठी तसल्लियों में रखा न करो।",
+  "रास नहीं आई हमें किसी की मोहब्बत, सबने अपना बनाकर आखिर छोड़ ही दिया।",
+  "हम भी कभी मुस्कुराते थे बेपरवाह होकर, अब तो वजह ढूंढनी पड़ती है।",
+  "अजीब खेल है इस जिंदगी का, जिसे जितना चाहा वही दूर चला गया।",
+  "अगर कोई न मिले तोह किस्मत से गिला नहीं करते, अक्सर लोग मिलकर भी मिला नहीं करते",
+  "खामोश चेहरे पर हज़ारों पहरे होते है हस्ती आँखों में भी ज़ख़्म गहरे होते है",
+  "और तो क्या था बेचने के लि अपनी आँखों के ख़्वाब बेचे हैं",
+  "हमें नसीब के चक्कर में डालकर उसने किसी के वक्त सुधारे हैं अपने हाथों से।",
+    "मुझे भेजा गया था दुनिया देखने के लिए, मैं एक चेहरे का गुलाम बन गया।",
+    "वह इस कदर रूठ गया हमसे, जैसे किसी और ने मना लिया हो।",
+    "हमें अहमियत तक नहीं दी गई और हम जान तक दे रहे थे।",
+    "अगर कोई न मिले तो किस्मत से गिला नहीं करते, अक्सर लोग मिलकर भी मिला नहीं करते।",
+    "खामोश चेहरे पर हज़ारों पहरे होते हैं, हस्ती आँखों में भी ज़ख्म गहरे होते हैं।",
+    "वो जाते-जाते कह गए कि हम सिर्फ ख़्वाबों में आएंगे, हमने कहा वादा तो कर लो, हम जिंदगी भर के लिए सो जाएंगे।",
+    "मुस्कुराने की आदत भी कितनी अजीब है, दिल उदास हो फिर भी चेहरे पर सजती है।",
+    "किस्मत ने जैसा चाहा वैसा ढल गए हम, बहुत संभल कर चले फिर भी फिसल गए हम।",
+    "दर्द बयां करने की अब आदत नहीं रही, चुप रहकर सह जाना ही अब हुनर लगता है।",
+    "कुछ घाव ऐसे होते हैं जो दिखाई नहीं देते, मगर दर्द बेहिसाब दे जाते हैं।",
+    "खामोशियां ही बेहतर हैं, शब्दों से अक्सर लोग रूठ जाया करते हैं।",
+    "अब कोई उम्मीद नहीं किसी से, जो चल रहा है उसे चलने दो।",
+    "दिल भर गया हो तो साफ़ मना कर दो, यूँ झूठी तसल्लीयों में रखा न करो।",
+    "रास नहीं आई हमें किसी की मोहब्बत, सबने अपना बनाकर आखिर छोड़ ही दिया।",
+    "हम भी कभी मुस्कुराते थे बेपरवाह होकर, अब तो वजह ढूंढनी पड़ती है।",
+    "अजीब खेल है इस जिंदगी का, जिसे जितना चाहा वही दूर चला गया।",
+    "और तो क्या था बेचने के लिए, अपनी आँखों के ख़واب बेचे हैं।",
+    "यूँ जो तकता है आसमान को तू, कोई रहता है आसमान में क्या?",
+    "जो गुज़ारी न जा सके हम से, हम ने वो ज़िंदगी गुज़ारी है।",
+    "बहुत नजदीक से दुनिया को देखा है मैंने, यहाँ सब अपने हैं पर कोई अपना नहीं।",
+    "शायद मेरे बिखरने में कुछ हाथ तुम्हारा भी था, तुम सिर्फ तमाशा देख रहे थे या साज़िश भी थी?",
+    "अब किसे फुर्सत है कि वो हाल हमारा पूछे, हम खुद से ही पूछ लेते हैं कि कैसे हो?",
+    "तुझसे बिछड़ के अब ये हाल है मेरा, कि साँस तो चलती है मगर जान नहीं होती।",
+    "हमको तो बस बर्बाद होना था, बहाने ढूँढती रही दुनिया तमाम।",
+    "कौन इस दिल की बात सुने, यहाँ हर कोई खुद से परेशान है।",
+    "कितना अजीब अपनी जिंदगी का सफर निकला, सारे जहाँ का दर्द हमारे ही हिस्से में आया।",
+    "दर्द की अपनी एक अलग ही दुनिया है, जहाँ सब खामोश रहते हैं मगर शोर बहुत होता है।",
+    "सुना है लोग उसे आँख भर के देखते हैं, तो उसके शहर में कुछ दिन ठहर के देखते हैं।",
+    "रंजिश ही सही, दिल ही दुखाने के लिए आ, आ फिर से मुझे छोड़ के जाने के लिए आ।",
+    "ये सोच कर कि वो बेवफा हमको याद क्यों करेगा, हमने खुद ही उसकी याद में रोना छोड़ दिया।",
+    "कितनी जल्दी बदल जाते हैं ये लोग, कल तक जो जान थे, आज अनजान हो गए।",
+    "जिंदगी में कुछ लोग ऐसे भी मिलते हैं, जो दिल में उतर तो जाते हैं पर किस्मत में नहीं होते।",
+    "रब्त रखना ही है तो किसी गहरे गम से रखो, आजकल लोग छोटी-छोटी बातों पर छोड़ जाते हैं।",
+    "उम्र भर की तालीम का बस इतना ही सार है, कि किसी पर मरना बेकार है।",
+    "शिकायतें तो बहुत हैं तुझसे ए जिंदगी, पर चुप इसलिए हूँ कि तूने दिया ही क्या है।",
+    "वो शख्स जो कभी हमारी दुनिया हुआ करता था, आज किसी गैर की महफिल की शान है।",
+    "बदलते हुए लोगों की और बदलते हुए मौसम की, एक ही कहानी है... दोनों बहुत रुलाते हैं।",
+    "तेरी यादों का समंदर दिल में उतर आया है, आज फिर आँखों में पानी सा भर आया है।"
+  "यूँ जो तकता है आसमान को तू कोई रहता है आसमान में क्या",
+  "जो गुज़ारी न जा सकी हम से हम ने वो ज़िंदगी गुज़ारी है"
+];
+function rotateShayari() {
+  const el = $("shayariText");
+  el.classList.add("fade");
+  setTimeout(() => {
+    const randomIndex = Math.floor(Math.random() * shayaris.length);
+    el.textContent = shayaris[randomIndex];
+    el.classList.remove("fade");
+  }, 500);
+}
+setInterval(rotateShayari, 15000);
+rotateShayari();
+
+// --- Lock & Auth ---
+const PASSCODE="badmas";
+const lock=$("lock"), input=$("lockInput"), error=$("lockError");
+function unlock(){
+  if(input.value.trim().toLowerCase()===PASSCODE){
+    lock.classList.add("hidden");
+    sessionStorage.setItem("badmas_unlocked","1");
+  }else{
+    error.textContent="That's not it — try again";
+    input.select();
+  }
+}
+$("lockBtn").onclick=unlock;
+input.onkeydown=e=>{if(e.key==="Enter")unlock()};
+if(sessionStorage.getItem("badmas_unlocked")==="1")lock.classList.add("hidden");
+
+// --- Sound Badge Upload ---
+const audioBadge=$("badgeAudio"), soundFile=$("soundFile"), soundBadge=$("soundBadge");
+let badgeUrl=null;
+soundBadge.addEventListener("click",e=>{
+  if(e.target===soundFile)return;
+  if(badgeUrl){audioBadge.currentTime=0;audioBadge.play().catch(()=>{})}
+  else soundFile.click();
+});
+soundFile.onchange=e=>{
+  const f=e.target.files[0];
+  if(!f)return;
+  if(badgeUrl)URL.revokeObjectURL(badgeUrl);
+  badgeUrl=URL.createObjectURL(f);
+  audioBadge.src=badgeUrl;
+  audioBadge.play().catch(()=>{});
+  showToast("Playing "+f.name);
+};
+
+function showToast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2500);
+}
+
+// --- Drawer Navigation ---
+const drawer=$("drawer");
+$("plBtn").onclick=()=>{drawer.classList.add("open");drawer.setAttribute("aria-hidden","false")};
+$("closeDrawer").onclick=()=>{drawer.classList.remove("open");drawer.setAttribute("aria-hidden","true")};
+
+function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+
+// --- Songs Master Data (Categorized) ---
+const tracks = [
+  // Gazal
+  { title: "Tere Bin Nai Lagda", artist: "Nusrat Fateh Ali Khan", url: "Tere_Bin_Nai_Lagda.mp3", category: "Gazal" },
+  { title: "Andaze Karam", artist: "Nusrat Fateh Ali Khan", url: "Andaze_Karam.mp3", category: "Gazal" },
+  { title: "Dulhe Ka Sehra", artist: "Nusrat Fateh Ali Khan", url: "Dulhe_Ka_Sehra.mp3", category: "Gazal" },
+  { title: "Tumhe Dillagi Bhul", artist: "Rahat Fateh Ali Khan", url: "TUMHE_DILLAGI_BHUL_RAHAT_FATEH.mp3", category: "Gazal" },
+  { title: "Kaali Kaali Zulfon", artist: "Nusrat Fateh Ali Khan", url: "KAALI_KAALI_ZULFON_NUSRAT.mp3", category: "Gazal" },
+  { title: "Ye Jo Halka Halka", artist: "Nusrat Fateh Ali Khan", url: "YE_JO_HALKA_HALKA_NUSRAT.mp3", category: "Gazal" },
+  { title: "Kal Chaudhvi Ki Raat", artist: "Jagjit Singh", url: "KAL_CHAUDHVI_KI_RAAT_JAGJIT_SINGH.mp3", category: "Gazal" },
+  { title: "Chupke Chupke Raat Din", artist: "Local Audio", url: "chupke_chupke_raat_din.mp3", category: "Gazal" },
+  { title: "Hoshwalo Ko Khabar", artist: "Local Audio", url: "hoshwalo_ko_khabar.mp3", category: "Gazal" },
+  { title: "Arz Kiya Hai", artist: "Audio", url: "Arz_kiya_hai.mp3", category: "Gazal" },
+
+  // Haryanavi
+  { title: "Gentleman", artist: "Masoom Sharma", url: "Gentleman_Masoom_Sharma.mp3", category: "Haryanvi" },
+   { title: "UP Bihar Lootne", artist: "Bhojpuri", url: "UP_Bihar_lootne.mp3", category: "Haryanavi" },
+  { title: "Babuan", artist: "Pawan Singh", url: "pawan_singh_babuan.mp3", category: "Haryanavi" },
+  { title: "Saj Ke Sawar Ke", artist: "Khesari Lal Yadav", url: "saj_ke_sawar_ke.mp3", category: "Haryanavi" },
+  { title: "Hook Raja Ji", artist: "Bhojpuri", url: "Hook_Raja_Ji_Bhojpuri.mp3", category: "Haryanavi" },
+  { title: "Chuwe Mor Jawani", artist: "Bhojpuri", url: "Chuwe_mor_Jawani_Bhojpuri.mp3", category: "Haryanavi" },
+  { title: "Balamua Ke Ballam", artist: "Bhojpuri", url: "Balamua_Ke_Ballam_Bhojpuri.mp3", category: "Haryanavi" },
+  { title: "Dhamaka", artist: "Bhojpuri", url: "Dhamaka_bhojpuri.mp3", category: "Haryanavi" },
+  { title: "Palang Sangwan Ke", artist: "Bhojpuri", url: "Palang_Sangwan_Ke_Bhojpuri.mp3", category: "Haryanavi" },
+  { title: "80 Lakh", artist: "Audio", url: "80_Lakh.mp3", category: "Haryanavi" },
+  { title: "Death Row", artist: "Dhandha Nyoliwala", url: "Death_row_dhandha.mp3", category: "Haryanavi" },
+  { title: "Tension", artist: "Dhandha Nyoliwala", url: "TENSION_DHANDA.mp3", category: "Haryanavi" },
+  { title: "No Mercy", artist: "Dhandha Nyoliwala", url: "NO_MERCY_Dhanda.mp3", category: "Haryanavi" },
+  { title: "Financer", artist: "Audio", url: "FINANCER.mp3", category: "Haryanavi" },
+  { title: "Jailer", artist: "Masoom Sharma", url: "JAILER_MASOOM.mp3", category: "Haryanavi" },
+  { title: "Caution", artist: "Dhandha Nyoliwala", url: "CAUTION_DHANDHA.mp3", category: "Haryanavi" },
+  { title: "Ishq Bawla", artist: "Dhandha Nyoliwala", url: "ISHQ_BAWLA_dhandha.mp3", category: "Haryanavi" },
+  { title: "Ego Killer", artist: "Dhandha Nyoliwala", url: "EGO_KILLER_DHANDHA.mp3", category: "Haryanavi" },
+  { title: "Unstoppable", artist: "Dhandha Nyoliwala", url: "Unstoppable_dhandha.mp3", category: "Haryanavi" },
+  { title: "Underground", artist: "Dhandha Nyoliwala", url: "UNDERGROUND_DHANDHA.mp3", category: "Haryanavi" },
+  { title: "Russian Bandana", artist: "Dhandha Nyoliwala", url: "Russian_Bandana_dhandha.mp3", category: "Haryanavi" },
+  { title: "Black Ride", artist: "Dhandha Nyoliwala", url: "Black_ride_Dhandha.mp3", category: "Haryanavi" },
+  { title: "Gaadi 150", artist: "Vikram Sarkar", url: "Gaadi_150.mp3", category: "Haryanavi" },
+  { title: "Yaar Badmas", artist: "Amanraj", url: "Yaar_Badmas_Amanraj.mp3", category: "Haryanavi" },
+  { title: "Bateu", artist: "Audio", url: "Bateu.mp3", category: "Haryanavi" },
+  { title: "Ji lagye Babya Me", artist: "Audio", url: "Ji_lagye_Babya_Me.mp3", category: "Haryanavi" },
+  { title: "Falani", artist: "Vikram Sarkar", url: "FALANI_Vikarm_Sarkar.mp3", category: "Haryanavi" },
+  { title: "Angli Hawa Me", artist: "Audio", url: "Angli_Hawa_Me.mp3", category: "Haryanavi" },
+  { title: "Over Confident", artist: "Billa", url: "OVER_CONFIDENT_BILLA.mp3", category: "Haryanavi" },
+  { title: "Bhaga Aale", artist: "Amanraj", url: "Bhaga_Aale_Amanraj.mp3", category: "Haryanavi" },
+  { title: "Gaddi pache gaddi", artist: "Amanraj", url: "Gaddi_pache_gaddi_Amanraj.mp3", category: "Haryanavi" },
+  { title: "Circle", artist: "Amanraj", url: "Circle_Amanraj.mp3", category: "Haryanavi" },
+  { title: "Kaale Kagaz", artist: "Amanraj Gill", url: "Kaale_KagaZ_AmanrajGill.mp3", category: "Haryanavi" },
+  { title: "Tag Awara", artist: "Amanraj Gill", url: "Tag_Awara_Amanraj_Gill.mp3", category: "Haryanavi" },
+  { title: "Kaana Pe Baal", artist: "Amanraj Gill", url: "Kaana_Pe_Baal_Amanrajgill.mp3", category: "Haryanavi" },
+  { title: "Naam Chale", artist: "Vikram", url: "Naam_Chale_Vikram.mp3", category: "Haryanavi" },
+  { title: "Desi Hood", artist: "Krish Rao", url: "Desi_Hood_krish_Rao.mp3", category: "Haryanavi" },
+  { title: "Cash Cash", artist: "Krish Rao", url: "Cash_Cash_Krish_Rao.mp3", category: "Haryanavi" },
+  { title: "Jaat Bagdo", artist: "Audio", url: "Jaat_Bagdo.mp3", category: "Haryanavi" },
+  { title: "The Villagers", artist: "Audio", url: "The_villagers.mp3", category: "Haryanavi" },
+  { title: "KAALI GAADI", artist: "Audio", url: "KAALI_GAADI.mp3", category: "Haryanavi" },
+  { title: "DHARA 302", artist: "Audio", url: "DHARA_302.mp3", category: "Haryanavi" },
+  { title: "Raat Ke Shikari", artist: "Masoom Sharma", url: "Raat_Ke_Shikari.mp3", category: "Haryanavi" },
+  { title: "2 Dada Part 2", artist: "Masoom Sharma", url: "2dada2.mp3", category: "Haryanavi" },
+  { title: "2 Dada Lyrical", artist: "Masoom Sharma", url: "2dada_lyrical.mp3", category: "Haryanavi" },
+  { title: "2 Dada", artist: "Masoom Sharma", url: "2dada.mp3", category: "Haryanavi" },
+  { title: "2 Khatole", artist: "Masoom Sharma", url: "2khatole.mp3", category: "Haryanavi" },
+  { title: "32 Ke Fire", artist: "Masoom Sharma", url: "32kefire.mp3", category: "Haryanavi" },
+  { title: "60 Mukadme", artist: "Masoom Sharma", url: "60mukadme.mp3", category: "Haryanavi" },
+  { title: "Arbi Ghode", artist: "Masoom Sharma", url: "arbi_ghode.mp3", category: "Haryanavi" },
+  { title: "Blender 8K", artist: "Masoom Sharma", url: "blender8k.mp3", category: "Haryanavi" },
+  { title: "Byah Ke Lavenge", artist: "Masoom Sharma", url: "byah_ke_lavenge.mp3", category: "Haryanavi" },
+  { title: "Chambal Ke Dakku", artist: "Masoom Sharma", url: "chambal_ke_dakku.mp3", category: "Haryanavi" },
+  { title: "Chamunda", artist: "Masoom Sharma", url: "chamunda.mp3", category: "Haryanavi" },
+  { title: "Daaku Daaku", artist: "Masoom Sharma", url: "daaku_daaku.mp3", category: "Haryanavi" },
+  { title: "Ek Khatola Jail Ke Bhitar 1", artist: "Masoom Sharma", url: "ek_khatola_1.mp3", category: "Haryanavi" },
+  { title: "Ek Khatola Jail Ke Bhitar 2", artist: "Masoom Sharma", url: "ek_khatola_2.mp3", category: "Haryanavi" },
+  { title: "Gundey Dore Pe", artist: "Masoom Sharma", url: "gundey_dore_pe.mp3", category: "Haryanavi" },
+  { title: "Kalam Tod Di", artist: "Masoom Sharma", url: "kalam_tod_di.mp3", category: "Haryanavi" },
+  { title: "Khoon Ki Holi", artist: "Masoom Sharma", url: "khoon_ki_holi.mp3", category: "Haryanavi" },
+  { title: "Lala Ji Ki Chori", artist: "Masoom Sharma", url: "lala_ji_ki_chori.mp3", category: "Haryanavi" },
+  { title: "Licence Ka Asla", artist: "Masoom Sharma", url: "licence_ka_asla.mp3", category: "Haryanavi" },
+  { title: "Davai", artist: "Masoom Sharma", url: "davai.mp3", category: "Haryanavi" },
+  { title: "Madam Ji", artist: "Masoom Sharma", url: "madam_ji.mp3", category: "Haryanavi" },
+  { title: "Mahila Mittar", artist: "Masoom Sharma", url: "mahila_mittar.mp3", category: "Haryanavi" },
+  { title: "Main Vohe", artist: "Masoom Sharma", url: "mai_vohe.mp3", category: "Haryanavi" },
+  { title: "Mard", artist: "Masoom Sharma", url: "mard..mp3", category: "Haryanavi" },
+  { title: "Ramayan Ka Saar", artist: "Masoom Sharma", url: "ramayan_ka_saar.mp3", category: "Haryanavi" },
+  { title: "Sab Gunday Hai", artist: "Masoom Sharma", url: "sab_gunday_hai.mp3", category: "Haryanavi" },
+  { title: "Warning", artist: "Masoom Sharma", url: "warning.mp3", category: "Haryanavi" },
+  { title: "Yaha Ke Bahubali", artist: "Masoom Sharma", url: "yaha_ke_bahubali.mp3", category: "Haryanavi" },
+  { title: "Sarkara Mein Hold", artist: "Hammy Muzic", url: "sarkara_mein_hold.mp3", category: "Haryanavi" },
+  { title: "Pistol Gel Beretta", artist: "Aman Rajgil", url: "pistol_gel_beretta.mp3", category: "Haryanavi" },
+  { title: "Not Guilty", artist: "Dhanda Nyoliwala", url: "Dhanda_Nyoliwala_Not_Guilty.mp3", category: "Haryanavi" },
+  // Bollywood
+  {title: "ISHQ",artist:"Audio",url:"ISHQ.mp3",category:"Bollywood"},
+  { title: "Mai Pal Do Pal", artist: "MS DHONI", url: "Mai_Pal_Do_Pal.mp3", category: "Bollywood" },
+  { title: "Batein Ye Kabhi Na", artist: "Arijit Singh", url: "Batein_Ye_Kabhi_Na.mp3", category: "Bollywood" },
+  { title: "Chilam Tambaku Ko Dabba", artist: "Unknown", url: "Chilam_Tambaku_Ko_Dabba.mp3", category: "Bollywood" },
+  { title: "Chilam Ke Sutte", artist: "Unknown", url: "Chilam_Ke_sutte.mp3", category: "Bollywood" },
+  { title: "Badri Ki Dulhania", artist: "Neha Kakkar, Dev Negi, Ikka", url: "BADRI_KI_DULHANIYA.mp3", category: "Bollywood" },
+  { title: "Dilbar", artist: "Neha Kakkar, Dhvani Bhanushali", url: "DILBAR.mp3", category: "Bollywood" },
+  { title: "Bahut Jatate Ho", artist: "Alka Yagnik & Kumar Sanu", url: "Bahut_Jatate_Ho_Old.mp3", category: "Bollywood" },
+  { title: "Ganpat", artist: "Mika Singh", url: "Ganpat.mp3", category: "Bollywood" },
+  { title: "Baap Ka Maal", artist: "Sukhwinder Singh & Mika Singh", url: "Baap_Ka_maal.mp3", category: "Bollywood" },
+  { title: "Oo Rangrez", artist: "Javed Ali & Shreya Ghoshal", url: "Oo_Rangrez.mp3", category: "Bollywood" },
+  { title: "Ranjhanaa", artist: "Dhanush", url: "Ranjhanaa_Dhanush.mp3", category: "Bollywood" },
+  { title: "O Sanam", artist: "Lucky Ali", url: "O_Sanam.mp3", category: "Bollywood" },
+  { title: "Aashiq Tera", artist: "Sohail Sen & Altamash Faridi", url: "Aashiq_Tera.mp3", category: "Bollywood" },
+  { title: "Balam Pichkari", artist: "Vishal Dadlani, Shalmali Kholgade", url: "Balm_pichkari.mp3", category: "Bollywood" },
+  { title: "Kalank", artist: "Arijit Singh", url: "Kalank_Arijit.mp3", category: "Bollywood" },
+  { title: "Afgan Jalebi", artist: "Pritam", url: "Afgan_Jalebi.mp3", category: "Bollywood" },
+  { title: "Beedi", artist: "Sunidhi Chauhan / Sukhwinder Singh", url: "Beedi.mp3", category: "Bollywood" },
+  { title: "Samjho Na", artist: "Aditya", url: "samjho_na.mp3", category: "Bollywood" },
+  { title: "Humdam", artist: "Aditya", url: "humdam_Aditya.mp3", category: "Bollywood" },
+  { title: "Barbaad", artist: "Saiyara", url: "Barbaad_Saiyara.mp3", category: "Bollywood" },
+  { title: "Saiyara old", artist: "Audio", url: "Saiyara_old.mp3", category: "Bollywood" },
+  { title: "Bulleya", artist: "Ranbir", url: "Bulleya_Ranbir.mp3", category: "Bollywood" },
+  { title: "Bulleya", artist: "Salman", url: "BULLEYA_SALMAN.mp3", category: "Bollywood" },
+  { title: "Haale Dil", artist: "Audio", url: "HAALE_DIL.mp3", category: "Bollywood" },
+  { title: "Bekhayali", artist: "Audio", url: "BEKHAYALI.mp3", category: "Bollywood" },
+  { title: "Sajni", artist: "Arijit", url: "Sajni_Arijit.mp3", category: "Bollywood" },
+  { title: "Tere Ishq Me", artist: "Audio", url: "Tere_Ishq_Me.mp3", category: "Bollywood" },
+  { title: "Kun Faya Kun", artist: "Audio", url: "KUN_FAYA_KUN.mp3", category: "Bollywood" },
+  { title: "Bhar Do Jholi Meri", artist: "Audio", url: "BHAR_DO_JHOLI_MERI.mp3", category: "Bollywood" },
+  { title: "Mai Agar Sitaro Se", artist: "Salman", url: "MAI_AGAR_SITARO_SE_SALMAN.mp3", category: "Bollywood" },
+  { title: "Kaho Na Kaho", artist: "Audio", url: "Kaho_na_kaho.mp3", category: "Bollywood" },
+  { title: "Pee Loon", artist: "Emraan Hashmi", url: "PEE_loon_Imran_hashmi.mp3", category: "Bollywood" },
+  { title: "Tum Se Hi", artist: "Audio", url: "Tum_Se_Hi.mp3", category: "Bollywood" },
+  { title: "Pehle Bhi Main", artist: "Audio", url: "Pehle_Bhi_Main.mp3", category: "Bollywood" },
+  { title: "Deewaniyat", artist: "Audio", url: "DEEWANIYAT.mp3", category: "Bollywood" },
+  { title: "Jo Beech Bajariya", artist: "Old", url: "Jo_Beech_Bajariya_Old.mp3", category: "Bollywood" },
+  { title: "Tum Ho To", artist: "Audio", url: "Tum_Ho_To.mp3", category: "Bollywood" },
+  { title: "Chal Diye Tum Kahan", artist: "Audio", url: "Chal_Diye_Tum_Kahan.mp3", category: "Bollywood" },
+  { title: "Ghagra", artist: "Audio", url: "Ghagra.mp3", category: "Bollywood" },
+  { title: "Billo Rani", artist: "Audio", url: "Billo_Rani.mp3", category: "Bollywood" },
+  { title: "Pal Pal Jeena", artist: "Audio", url: "Pal_Pal_Jeena.mp3", category: "Bollywood" },
+  { title: "Baarish", artist: "Audio", url: "Baarish.mp3", category: "Bollywood" },
+  { title: "Dekhte Dekhte", artist: "Audio", url: "Dekhte_dekhte.mp3", category: "Bollywood" },
+  { title: "Dil Diya Gallan", artist: "Audio", url: "Dil_Diya_gallan.mp3", category: "Bollywood" },
+  { title: "Tera Hoone Laga Hu", artist: "Audio", url: "Tera_hoone_laga_hu.mp3", category: "Bollywood" },
+  { title: "Tu Jaane Na", artist: "Audio", url: "Tu_Jaane_Na.mp3", category: "Bollywood" },
+  { title: "Meri Laila", artist: "Audio", url: "Meri_Laila.mp3", category: "Bollywood" },
+  { title: "Tere Sang Yaara", artist: "Audio", url: "Tere_sang_yaara.mp3", category: "Bollywood" },
+  { title: "Tere Liye", artist: "Audio", url: "Tere_liye.mp3", category: "Bollywood" },
+  { title: "Tumhe Dekhe Meri Ankhe", artist: "Audio", url: "Tumhe_dekhe_meri_Ankhe.mp3", category: "Bollywood" },
+  { title: "Mai Agar Samne", artist: "Audio", url: "Mai_Agar_Samne.mp3", category: "Bollywood" },
+  { title: "Aapke Pyar Mein", artist: "Audio", url: "Aapke_pyar_mein.mp3", category: "Bollywood" },
+  { title: "Raaz Ankhe Teri", artist: "Audio", url: "Raaz_ankhe_teri.mp3", category: "Bollywood" },
+  { title: "Apna Mujhe Tu Laga", artist: "Audio", url: "Apna_mujhe_Tu_Laga.mp3", category: "Bollywood" },
+  { title: "Tujhe Mai Pyaar Karu 1920", artist: "Audio", url: "Tujhe_mai_Pyaar_karu_1920.mp3", category: "Bollywood" },
+  { title: "Uska Hi Banana", artist: "Audio", url: "Uska_Hi_Banana.mp3", category: "Bollywood" },
+  { title: "Khud Ko Tere Paas", artist: "Audio", url: "Khud_ko_tere_paas.mp3", category: "Bollywood" },
+  { title: "Tu Hi Haqeeqat", artist: "Audio", url: "Tu_Hi_Haqeeqat.mp3", category: "Bollywood" },
+  { title: "Labon Ko", artist: "Audio", url: "Labon_ko.mp3", category: "Bollywood" },
+  { title: "Dil Ibadat", artist: "Audio", url: "Dil_Ibadat.mp3", category: "Bollywood" },
+  { title: "Zara Sa", artist: "Audio", url: "zara_sa.mp3", category: "Bollywood" },
+  { title: "Enna Sona", artist: "Arijit Singh", url: "Enna_Sona.mp3", category: "Bollywood" },
+  { title: "Dard Dilo Ke", artist: "Mohammed Irfan", url: "Dard_Dilo_ke.mp3", category: "Bollywood" },
+  { title: "Chunnari Chunnari", artist: "Anuradha Sriram, Abhijeet Bhattacharya", url: "Chunnari_Chunnari.mp3", category: "Bollywood" },
+  { title: "Lal Dupatta", artist: "Udit Narayan, Alka Yagnik", url: "Lal_Dupatta.mp3", category: "Bollywood" },
+  { title: "Toh Phir Aao", artist: "Mustafa Zahid", url: "Toh_Phir_Aao.mp3", category: "Bollywood" },
+  { title: "Ishq De Fanniyar", artist: "Shafqat Amanat Ali", url: "Ishq_De_Fanniyar.mp3", category: "Bollywood" },
+  { title: "Qafirana", artist: "Arijit Singh", url: "Qafirana.mp3", category: "Bollywood" },
+  { title: "Jaan Nisar", artist: "Arijit Singh", url: "Jaan_nisar.mp3", category: "Bollywood" },
+  { title: "Jaan Ban Gaye", artist: "Mithoon", url: "Jaan_Ban_Gaye.mp3", category: "Bollywood" },
+  { title: "Rubru", artist: "Audio", url: "Rubru.mp3", category: "Bollywood" },
+  { title: "Thodi Der", artist: "Farhan Saeed", url: "Thodi_der.mp3", category: "Bollywood" },
+  { title: "Chikni Chameli", artist: "Shreya Ghoshal", url: "Chikni_chameli.mp3", category: "Bollywood" },
+  { title: "Ajnabi Hawayen", artist: "Audio", url: "Ajnabi_hawayen.mp3", category: "Bollywood" },
+  { title: "Darkhaast", artist: "Arijit Singh", url: "Darkhast_arijit.mp3", category: "Bollywood" },
+  { title: "Aaj Se Teri", artist: "Arijit Singh", url: "aaj_se_teri.mp3", category: "Bollywood" },
+  { title: "Zaalima", artist: "Arijit Singh", url: "Zaalima_Arijit.mp3", category: "Bollywood" },
+  { title: "Sitare", artist: "Arijit Singh", url: "Sitare_arijit.mp3", category: "Bollywood" },
+  { title: "Ambarsaria", artist: "Fukrey", url: "Ambarsaria.mp3", category: "Bollywood" },
+  { title: "Unko bhi humse mohabbat", artist: "old", url: "Unko_bhi_humse_mohabbat.mp3", category: "Bollywood" },
+  { title: "Aisa Banna Sawarna", artist: "Local Audio", url: "Aisa_Banna_Sawarna.mp3", category: "Bollywood" },
+  { title: "Is Tarah Ashiqui Ka", artist: "Local Audio", url: "is_tarah_ashiqui_ka.mp3", category: "Bollywood" },
+  { title: "Tere Dard Se Dil", artist: "Local Audio", url: "tere_dard_se_dil.mp3", category: "Bollywood" },
+  { title: "Pehli Pehli Baar Mohabbat", artist: "Local Audio", url: "pehli_pehli_baar_mohabbat.mp3", category: "Bollywood" },
+  { title: "Ankh Hai Bhari Bhari", artist: "Local Audio", url: "ankh_hai_bhari_bhari.mp3", category: "Bollywood" },
+  { title: "Hum Pyar Hai", artist: "Local Audio", url: "hum_pyar_hai.mp3", category: "Bollywood" },
+  { title: "Sochenge Tumhe Pyaar", artist: "Local Audio", url: "sochenge_tumhe_pyaar.mp3", category: "Bollywood" },
+  { title: "Mujhse Mohabbat Ka", artist: "Local Audio", url: "mujhse_mohabbat_ka.mp3", category: "Bollywood" },
+  { title: "Zaroorat Hai", artist: "Local Audio", url: "zaroorat_hai.mp3", category: "Bollywood" },
+  { title: "Raah Mein Unse Mulaqat", artist: "Local Audio", url: "Raah_Mein_Unse_Mulaqat(256k).mp3", category: "Bollywood" },
+  { title: "Itna Na Mujhse Tu Pyar", artist: "Local Audio", url: "itna_na_mujhse_tu_pyar.mp3", category: "Bollywood" },
+  { title: "Shikwa Nahi Kisi Se", artist: "Local Audio", url: "shikwa_nahi_kisi_se.mp3", category: "Bollywood" },
+  { title: "Dil Laga Liya", artist: "Local Audio", url: "dil_laga_liya.mp3", category: "Bollywood" },
+  { title: "Jeeta Tha Jiske Liye", artist: "Local Audio", url: "jeeta_tha_jiske_liye.mp3", category: "Bollywood" },
+  { title: "Pal Pal Dil Ke", artist: "Local Audio", url: "pal_pal_dil_ke.mp3", category: "Bollywood" },
+  { title: "Tum Chupa Na Sakogi", artist: "Local Audio", url: "tum_chupa_na_sakogi.mp3", category: "Bollywood" },
+  { title: "Barsat Ke Mausam", artist: "Local Audio", url: "barsat_ke_mausam.mp3", category: "Bollywood" },
+  { title: "Mere Mehboob Qayamat Hogi", artist: "Kishore Kumar", url: "mere_mehbood_old.mp3", category: "Bollywood" },
+  { title: "Ek Tarfa", artist: "Darshan Raval", url: "ek_tarfa.mp3", category: "Bollywood" },
+  // Hip-hop
+  { title: "Saza E Maut", artist: "KR$NA & Raftaar", url: "Saza_E_Maut_Krsna.mp3", category: "Hip-hop" },
+  { title: "Woh Raat", artist: "KR$NA", url: "Woh_Raat_Krsna.mp3", category: "Hip-hop" },
+  { title: "Jashne HIP HOP", artist: "Raftaar & KR$NA", url: "Jashne_HIP_HOP.mp3", category: "Hip-hop" },
+  { title: "Baawe", artist: "Badshah", url: "Baawe_Badshah.mp3", category: "Hip-hop" },
+  { title: "Daaku", artist: "Badshah", url: "DAAKU_badshah.mp3", category: "Hip-hop" },
+  { title: "Big Dawgs", artist: "Hanumankind", url: "Big_Dawgs_Hanumankind.mp3", category: "Hip-hop" },
+  { title: "Some Of Us", artist: "KR$NA ft AR Paisley", url: "Some_Of_Us_KR$NA_ft_AR_PAISLEY.mp3", category: "Hip-hop" },
+  { title: "Nusta Paisa", artist: "MC Stan", url: "NUSTA_PAISA_M_C_STAN.mp3", category: "Hip-hop" },
+  { title: "Ek Din Pyaar", artist: "MC Stan", url: "EK_DIN_PYAAR_M_C_STAN.mp3", category: "Hip-hop" },
+  { title: "Ektarfa", artist: "King", url: "EKTARFA_KING.mp3", category: "Hip-hop" },
+  { title: "Ek Raat", artist: "Vilen", url: "EK_RAAT_VILEN.mp3", category: "Hip-hop" },
+  { title: "Chidiya", artist: "Vilen", url: "CHIDIYA_VILEN.mp3", category: "Hip-hop" },
+  { title: "Kyu Dhundhe", artist: "Vilen", url: "Kyu_dhundhe_vilen.mp3", category: "Hip-hop" },
+  { title: "Churake", artist: "Vilen", url: "CHURAKE_VILEN.mp3", category: "Hip-hop" },
+  { title: "No Cap", artist: "KR$NA", url: "NO_CAP_KRSNA.mp3", category: "Hip-hop" },
+  { title: "Kodak", artist: "Seedhe Maut", url: "KODAK_SEEDHE_MAUT.mp3", category: "Hip-hop" },
+  { title: "Hola Amigo", artist: "KR$NA", url: "HOLA_AMIGO_KRSNA.mp3", category: "Hip-hop" },
+  { title: "Rap God", artist: "RP Singh", url: "Rap_God_RP_Singh.mp3", category: "Hip-hop" },
+  { title: "Banger", artist: "RP Singh", url: "Banger_Rp_Singh.mp3", category: "Hip-hop" },
+  { title: "Move Back", artist: "RP Singh", url: "Move_Back_Rp_Singh.mp3", category: "Hip-hop" },
+  { title: "Woh", artist: "Ikka / Dino", url: "woh_ikka_dino.mp3", category: "Hip-hop" },
+  { title: "Trap Munde", artist: "Ikka", url: "trap_munde_ikka.mp3", category: "Hip-hop" },
+  { title: "Villain", artist: "Ikka / KR$NA", url: "villain_ikka_krsna.mp3", category: "Hip-hop" },
+  { title: "Angaar", artist: "Raftaar / Ikka", url: "Angaar_raftaar_ikka.mp3", category: "Hip-hop" },
+  { title: "Banjo", artist: "Fotty Seven", url: "Banjo_fotty_seven.mp3", category: "Hip-hop" },
+  { title: "Baap Se", artist: "KR$NA / Fotty Seven", url: "Baap_se_krsna_47.mp3", category: "Hip-hop" },
+  { title: "Bhai Hai", artist: "Fotty Seven", url: "Bhai_hai_47.mp3", category: "Hip-hop" },
+  { title: "Bohot Tez", artist: "Fotty Seven", url: "Bohot_tez_47.mp3", category: "Hip-hop" },
+  { title: "Velvet Flow", artist: "Badshah", url: "velvet_flow_Badshah.mp3", category: "Hip-hop" },
+  { title: "Koi Na", artist: "Badshah", url: "Koi_Na_Badshah.mp3", category: "Hip-hop" },
+  { title: "O Sajna", artist: "DIVINE", url: "O_sajna_divine.mp3", category: "Hip-hop" },
+  { title: "Morni", artist: "Badshah", url: "Morni_Badshah.mp3", category: "Hip-hop" },
+  { title: "Mercy", artist: "Badshah", url: "Mercy_Badshah.mp3", category: "Hip-hop" },
+  { title: "Buzz", artist: "Aastha Gill / Badshah", url: "Buzz.mp3", category: "Hip-hop" },
+  { title: "Mirchi", artist: "DIVINE", url: "Mirchi_Divine.mp3", category: "Hip-hop" },
+  { title: "Hip Hop", artist: "Audio", url: "Hip_Hop.mp3", category: "Hip-hop" },
+  { title: "Brown Rang", artist: "Badshah", url: "Brown_rang_Badshsh.mp3", category: "Hip-hop" },
+  { title: "Millionaire", artist: "Yo Yo Honey Singh", url: "Millionaire_YOYO.mp3", category: "Hip-hop" },
+  { title: "Dope Shope", artist: "Raftaar / Yo Yo Honey Singh", url: "Dope_shope_raftaar.mp3", category: "Hip-hop" },
+  { title: "One Bottle Down", artist: "Yo Yo Honey Singh", url: "one_bottle_down.mp3", category: "Hip-hop" },
+  { title: "Two Tone", artist: "Young Stunners", url: "Two_tone_young_stunners.mp3", category: "Hip-hop" },
+  { title: "Kanpati 2", artist: "Rana Brass", url: "Kanpati_2_Rana_brass.mp3", category: "Hip-hop" },
+  { title: "Dose", artist: "Kotti", url: "Dose_Kotti.mp3", category: "Hip-hop" },
+  { title: "Zor", artist: "Rana Brass", url: "Zor_Rana_Brass.mp3", category: "Hip-hop" },
+  { title: "Bhid Matt", artist: "Audio", url: "bhid_matt.mp3", category: "Hip-hop" },
+  { title: "Freeverse Feast", artist: "Audio", url: "freeverse_feast.mp3", category: "Hip-hop" },
+  { title: "Triple OG", artist: "Audio", url: "triple_og.mp3", category: "Hip-hop" },
+  { title: "Khatta Flow", artist: "KRSNA / Seedhe Maut", url: "khatta_flow.mp3", category: "Hip-hop" },
+  { title: "Prarthana", artist: "KR$NA", url: "Prarthana.mp3", category: "Hip-hop" },
+
+  // English
+  { title: "We Don't Talk Anymore", artist: "Charlie Puth", url: "Charlie_Puth_We_Dont_Talk.mp3", category: "English" },
+  { title: "Attention", artist: "Charlie Puth", url: "Charlie_Puth_Attention.mp3", category: "English" },
+  { title: "Shape Of You", artist: "Ed Sheeran", url: "Shape_Of_You_ED_Sheeren.mp3", category: "English" },
+  { title: "Gone", artist: "Phillip Phillips", url: "Phillip_Phillips_Gone.mp3", category: "English" },
+  { title: "7 Years", artist: "Lukas Graham", url: "Lukas_Graham_7_Years.mp3", category: "English" },
+  { title: "Starboy", artist: "The Weeknd", url: "The_Weeknd_Starboy.mp3", category: "English" },
+  { title: "I Ain't Worried", artist: "OneRepublic", url: "OneRepublic_I_Ain't_Worry.mp3", category: "English" },
+  { title: "Despacito", artist: "Luis Fonsi", url: "Daspacito.mp3", category: "English" },
+  { title: "Let Me Love You", artist: "DJ Snake", url: "DJ_Snake_Let_Me_Love_You.mp3", category: "English" },
+  { title: "Six Days", artist: "Tokyo Drift", url: "Tokyo_Drift_Six_Days.mp3", category: "English" },
+  { title: "Bye Bye Bye", artist: "NSYNC", url: "NSYNC_Bye_Bye_Bye_Lyrics.mp3", category: "English" },
+  { title: "Perfect", artist: "Ed Sheeran", url: "Ed_Sheeran_Perfect.mp3", category: "English" },
+  { title: "Believer", artist: "Imagine Dragons", url: "Imagine_Dragons_Believer.mp3", category: "English" },
+
+  // Punjabi
+   {title: "Daaku", artis: "Badshah",url: "DAAKU_badshah.mp3",category:"Punjabi"},
+  { title: "Filhaal", artist: "B Praak", url: "FILHAAL.mp3", category: "Punjabi" },
+  { title: "Allah De Bandeya", artist: "Unknown", url: "Allah_De_Bandeya.mp3", category: "Punjabi" },
+  { title: "Mann Bhareya", artist: "B Praak", url: "Mann_Bhareya.mp3", category: "Punjabi" },
+  { title: "Ranjheya Ve", artist: "Unknown", url: "Ranjheya_Ve.mp3", category: "Punjabi" },
+  { title: "Tu Hai Kahan", artist: "AUR", url: "Tu_Hai_Kahan.mp3", category: "Punjabi" },
+  { title: "Flop Song", artist: "Sidhu Moose Wala", url: "Flop_Song_Sidhu.mp3", category: "Punjabi" },
+  { title: "Same Beef", artist: "Sidhu Moose Wala & Bohemia", url: "Same_Beef_Sidhu.mp3", category: "Punjabi" },
+  { title: "Hauli Hauli", artist: "Sidhu Moose Wala", url: "Hauli_Hauli_sidhu.mp3", category: "Punjabi" },
+  { title: "47", artist: "Sidhu Moose Wala & Mist", url: "4_7_Sidhu.mp3", category: "Punjabi" },
+  { title: "Badfella", artist: "Sidhu Moose Wala", url: "BADFELLA_sidhu.mp3", category: "Punjabi" },
+  { title: "East Side Flow", artist: "Sidhu Moose Wala", url: "East_Side_Flow.mp3", category: "Punjabi" },
+  { title: "0 To 100", artist: "Sidhu Moose Wala", url: "0_To_100_Sidhu.mp3", category: "Punjabi" },
+  { title: "These Days", artist: "Sidhu Moose Wala & Boer", url: "These_Days_Sidhu.mp3", category: "Punjabi" },
+  { title: "Malwa Block", artist: "Sidhu Moose Wala", url: "Malwa_Block_Sidhu.mp3", category: "Punjabi" },
+  { title: "IDGAF", artist: "Sidhu Moose Wala", url: "IDGAF_Sidhu.mp3", category: "Punjabi" },
+  { title: "Moosedrill", artist: "Sidhu Moose Wala", url: "Moosedrill_Sidhu_Moosewala.mp3", category: "Punjabi" },
+  { title: "Daku", artist: "Chani Nattan & Inderpal Moga", url: "Daku_Channi_Natan.mp3", category: "Punjabi" },
+  { title: "Tere Bina Na Guzara", artist: "Unknown", url: "Tere_Bina_Na_Guzara.mp3", category: "Punjabi" },
+  { title: "Jaiye Sajna", artist: "Unknown", url: "Jaiye_Sajna.mp3", category: "Punjabi" },
+  { title: "Chann Sitare", artist: "Ammy Virk", url: "Chann_Sitare.mp3", category: "Punjabi" },
+  { title: "Titli", artist: "Satinder Sartaaj", url: "Titli_Satinder.mp3", category: "Punjabi" },
+  { title: "Udaarian", artist: "Satinder Sartaaj", url: "Udaarian_Satinder.mp3", category: "Punjabi" },
+  { title: "Jhol", artist: "Coke Studio", url: "Jhol.mp3", category: "Punjabi" },
+  { title: "Sajjan Raazi", artist: "Satinder Sartaaj", url: "Sajjan_Raazi.mp3", category: "Punjabi" },
+  { title: "Channa Ve", artist: "Akhil Sachdeva", url: "Channa_Ve.mp3", category: "Punjabi" },
+  { title: "Bewafa", artist: "Imran Khan", url: "Bewafa.mp3", category: "Punjabi" },
+  { title: "Mohabbat Ka Gum Hai", artist: "Audio", url: "Mohabbat_Ka_Gum_Hai.mp3", category: "Punjabi" },
+  { title: "S_T_F_U", artist: "AP Dhillon", url: "S_T_F_U _AP_Dhillon.mp3", category: "Punjabi" },
+  { title: "PB65 Mohali", artist: "Audio", url: "pb65_mohali.mp3", category: "Punjabi" },
+  { title: "Not Sure", artist: "Cheema Y", url: "NOT_SURE_CheemaY.mp3", category: "Punjabi" },
+  { title: "Na Ja Na Ja", artist: "Audio", url: "Na_Ja_Na_Ja.mp3", category: "Punjabi" },
+  { title: "Wakhra Swag", artist: "Audio", url: "Wakhra_Swag.mp3", category: "Punjabi" },
+  { title: "Amplifier", artist: "Audio", url: "Amplifier.mp3", category: "Punjabi" },
+  { title: "Yaar Anmulle", artist: "Audio", url: "Yaar_Anmulle.mp3", category: "Punjabi" },
+  { title: "3 Peg", artist: "Audio", url: "3_peg.mp3", category: "Punjabi" },
+  { title: "Gabru", artist: "Yo Yo Honey Singh", url: "Gabru_YO_YO.mp3", category: "Punjabi" },
+  { title: "Chaska Hai Yaara Nu", artist: "Yo Yo Honey Singh", url: "Chaska_Hai_Yaara_Nu_YO_YO.mp3", category: "Punjabi" },
+  { title: "Jaguar", artist: "Bohemia", url: "Jaguar_Bohemia.mp3", category: "Punjabi" },
+  { title: "Khaab", artist: "Akhil", url: "Khaab_Akhil.mp3", category: "Punjabi" },
+  { title: "Hostel", artist: "Audio", url: "Hostel.mp3", category: "Punjabi" },
+  { title: "Gaal Ni Kadni", artist: "Audio", url: "Gaal_Ni_Kadni.mp3", category: "Punjabi" },
+  { title: "Yaar Beli", artist: "Audio", url: "Yaar_Beli.mp3", category: "Punjabi" },
+  { title: "Dil Lutiya", artist: "Audio", url: "Dil_Lutiya.mp3", category: "Punjabi" },
+  { title: "Sirra", artist: "Audio", url: "SIRRA.mp3", category: "Punjabi" },
+  { title: "On Top", artist: "Karan Aujla", url: "ON_TOP_Karan_Aujhla.mp3", category: "Punjabi" },
+  { title: "Dhundhla", artist: "Talwiinder", url: "Dhundhla_Talwinder.mp3", category: "Punjabi" },
+  { title: "Drop Top", artist: "AP Dhillon", url: "DROPTOP_A_P_DHILLON.mp3", category: "Punjabi" },
+  { title: "Insane", artist: "AP Dhillon", url: "INSANE_AP_DHILLON.mp3", category: "Punjabi" },
+  { title: "Old Money", artist: "AP Dhillon", url: "OLD_MONEY_AP_DHILLON.mp3", category: "Punjabi" },
+  { title: "STFU", artist: "AP Dhillon", url: "S_T_F_U_AP_Dhillon.mp3", category: "Punjabi" },
+  { title: "Dealer", artist: "Diljit Dosanjh", url: "Diljit_Dosanjh_Dealer.mp3", category: "Punjabi" },
+  { title: "Thodi Si Daaru", artist: "AP Dhillon", url: "Thodi_Si_Daaru_AP_Dhillon.mp3", category: "Punjabi" },
+  { title: "With You", artist: "AP Dhillon", url: "With_You_AP_Dhillon.mp3", category: "Punjabi" },
+  { title: "Signed To God", artist: "Sidhu Moose Wala", url: "Signed_To_God_Sidhu.mp3", category: "Punjabi" },
+  { title: "Last Ride", artist: "Sidhu Moose Wala", url: "LAST_RIDE_SIDHU.mp3", category: "Punjabi" },
+  { title: "Levels", artist: "Sidhu Moose Wala", url: "LEVELS_SIDHU.mp3", category: "Punjabi" },
+  { title: "Winning Speech", artist: "Karan Aujla", url: "WINNING_SPEECH_KARAN.mp3", category: "Punjabi" },
+  { title: "Haseen", artist: "Talwinder", url: "HASEEN_TALWINDER.mp3", category: "Punjabi" },
+  { title: "Shoot Da Order", artist: "Audio", url: "Shoot_Da_Order.mp3", category: "Punjabi" },
+  { title: "Superstar", artist: "Sukhe", url: "Superstar_Sukhe.mp3", category: "Punjabi" },
+  { title: "JOURNEY", artist: "Amrit Maan", url: "JOURNEY_Amrit_Maan.mp3", category: "Punjabi" },
+  { title: "Patiala Flow", artist: "Parmish Verma", url: "Patiala_Flow_Parmish.mp3", category: "Punjabi" },
+  { title: "Off Limit", artist: "Parmish Verma", url: "Off_Limit_parmish.mp3", category: "Punjabi" },
+  { title: "No Reason", artist: "Parmish Verma", url: "No_Reason_parmish.mp3", category: "Punjabi" },
+  { title: "Aam Jahe Munde", artist: "Parmish Verma", url: "Aam_Jahe_Munde_Parmish.mp3", category: "Punjabi" },
+  { title: "Check It Out", artist: "Parmish Verma", url: "Check_it_out_parmish.mp3", category: "Punjabi" },
+  { title: "Rubicon Drill", artist: "Audio", url: "Rubicon_Drill.mp3", category: "Punjabi" },
+  { title: "Same Time Same Jagah", artist: "Audio", url: "Same_Time_Same_Jagah.mp3", category: "Punjabi" },
+  { title: "12 Saal", artist: "Bilaal Saeed", url: "12_Saal_bilaal_saeed.mp3", category: "Punjabi" },
+  { title: "DXB", artist: "Cheema Y", url: "DXB_CheemaY.mp3", category: "Punjabi" },
+  { title: "Sit Down Son", artist: "Navaan Sandhu", url: "Sit_Down_Son_Navaan_Sandhu.mp3", category: "Punjabi" },
+  { title: "Mafia Life", artist: "Sidhu Moose Wala", url: "Mafia_Life_Sidhu.mp3", category: "Punjabi" },
+  { title: "NEVER FOLD", artist: "Sidhu Moose Wala, Sunny Malton", url: "Never_fold.mp3", category: "Punjabi" },
+  { title: "So High", artist: "Sidhu Moose Wala", url: "So_High.mp3", category: "Punjabi" },
+  { title: "295", artist: "Sidhu Moose Wala", url: "295_Sidhu_Moose_Wala.mp3", category: "Punjabi" },
+  { title: "Elevated", artist: "Shubh", url: "Elevated_Shubh.mp3", category: "Punjabi" },
+  { title: "BROWN MUNDE", artist: "AP Dhillon, Gurinder Gill, Shinda Kahlon", url: "BROWN_MUNDE.mp3", category: "Punjabi" },
+  { title: "We Rollin", artist: "Shubh", url: "We_Rollin.mp3", category: "Punjabi" },
+  { title: "Excuses", artist: "AP Dhillon", url: "Excuses_AP_Dhillion.mp3", category: "Punjabi" },
+  { title: "9 45", artist: "Prabh Singh", url: "9_45_Prabh_Singh.mp3", category: "Punjabi" },
+  { title: "Buckle Up", artist: "Shubh", url: "Shubh_Buckle_Up.mp3", category: "Punjabi" },
+  { title: "Together", artist: "Shubh", url: "Shubh_Together.mp3", category: "Punjabi" },
+  { title: "No Love", artist: "Shubh", url: "No_Love_Shubh.mp3", category: "Punjabi" },
+  { title: "Fell For You", artist: "Shubh", url: "Shubh_Fell_For_You.mp3", category: "Punjabi" },
+  { title: "Balenci", artist: "Shubh", url: "Shubh_Balenci.mp3", category: "Punjabi" },
+  { title: "Moves 360°", artist: "Shubh", url: "Shubh_Moves_360°.mp3", category: "Punjabi" },
+  { title: "One Love", artist: "Shubh", url: "Shubh_One_Love.mp3", category: "Punjabi" },
+  { title: "Cheque", artist: "Shubh", url: "Shubh_Cheque.mp3", category: "Punjabi" },
+  { title: "Supreme", artist: "Shubh", url: "Supreme_Shubh.mp3", category: "Punjabi" },
+  { title: "CALIFORNIA LOVE", artist: "Cheema Y", url: "CALIFORNIA_LOVE_CHEEMAY.mp3", category: "Punjabi" },
+  { title: "TUTOR Song", artist: "Cheema Y", url: "TUTOR_Song_CheemaY.mp3", category: "Punjabi" },
+  { title: "Police", artist: "Cheema Y", url: "Police_CheemaY.mp3", category: "Punjabi" },
+  { title: "TRUMP", artist: "Cheema Y", url: "TRUMP_CheemaY.mp3", category: "Punjabi" },
+  { title: "Snake", artist: "Cheema Y", url: "Snake_cheemaY.mp3", category: "Punjabi" },
+  { title: "Jackpot", artist: "Cheema Y", url: "Jackpot_CheemaY.mp3", category: "Punjabi" },
+  { title: "Dooron Dooron", artist: "Audio", url: "Dooron_Dooron.mp3", category: "Punjabi" },
+  { title: "Daytona", artist: "Karan Aujla", url: "daytona_karan.mp3", category: "Punjabi" },
+  { title: "Soulmate", artist: "Arijit Singh", url: "Soulmate_Arijit.mp3", category: "Punjabi" },
+  { title: "Players", artist: "Karan Aujla", url: "Players_karan_Aujhla.mp3", category: "Punjabi" },
+  { title: "Aadat", artist: "Atif Aslam", url: "Aadat.mp3", category: "Punjabi" },
+  { title: "Yaar Bathere", artist: "Alfaaz / Yo Yo Honey Singh", url: "Yaar_Bathere.mp3", category: "Punjabi" },
+  { title: "Haaye Mera Dil", artist: "Alfaaz / Yo Yo Honey Singh", url: "Haaye_mera_dil.mp3", category: "Punjabi" },
+  { title: "Teeje Week", artist: "Audio", url: "Teeje_week.mp3", category: "Punjabi" },
+  { title: "Lover", artist: "Diljit Dosanjh", url: "Lover_diljit.mp3", category: "Punjabi" },
+  { title: "Lemonade", artist: "Diljit Dosanjh", url: "Lemonade.mp3", category: "Punjabi" },
+  { title: "Ishq Di Baajiyaan", artist: "Diljit Dosanjh", url: "Ishq_di_bajiyan.mp3", category: "Punjabi" },
+  { title: "Khutti", artist: "Diljit Dosanjh", url: "Khutti_Diljit.mp3", category: "Punjabi" },
+  { title: "8 Asle", artist: "Audio", url: "8_asle.mp3", category: "Punjabi" },
+  { title: "Raat Di Gedi", artist: "Diljit Dosanjh", url: "Raat_di_gedi.mp3", category: "Punjabi" },
+  { title: "Water", artist: "Diljit Dosanjh", url: "Water_diljit.mp3", category: "Punjabi" },
+  { title: "Boyfriend", artist: "Karan Aujla", url: "Boyfriend_Karan.mp3", category: "Punjabi" },
+  { title: "Case", artist: "Diljit Dosanjh", url: "Case_diljit.mp3", category: "Punjabi" },
+  { title: "Lalkara", artist: "Diljit Dosanjh", url: "Lalkara_diljit.mp3", category: "Punjabi" },
+  { title: "G.O.A.T.", artist: "Diljit Dosanjh", url: "GOAT_diljit.mp3", category: "Punjabi" },
+  { title: "Hass Hass", artist: "Diljit Dosanjh / Sia", url: "Hass_Hass.mp3", category: "Punjabi" },
+  { title: "Born To Shine", artist: "Diljit Dosanjh", url: "Born_To_Shine.mp3", category: "Punjabi" },
+  { title: "Deewane", artist: "Navaan Sandhu", url: "Deewane_Navan.mp3", category: "Punjabi" },
+  { title: "Headliner", artist: "Navaan Sandhu", url: "Headliner_Navaan.mp3", category: "Punjabi" },
+  { title: "Bairan", artist: "Banjare", url: "Bairan.mp3", category: "Punjabi" },
+  { title: "Barsat", artist: "banjare", url: "Barsat.mp3", category: "Punjabi" },
+  { title: "PB 65 MOHALI DA", artist: "Sidhu Moose Wala", url: "pb65_mohali_da.mp3", category: "Punjabi" },
+  { title: "Gangsta Karan", artist: "Karan Aujla", url: "gangsta_karan.mp3", category: "Punjabi" },
+  { title: "Wavy Official", artist: "Karan Aujla", url: "wavy_official.mp3", category: "Punjabi" },
+  { title: "52 Bars", artist: "Karan Aujla", url: "52_bars.mp3", category: "Punjabi" },
+  { title: "YKWIM Karan", artist: "Karan Aujla", url: "ykwim_karan.mp3", category: "Punjabi" },
+  { title: "Brats", artist: "Arjan Dhillon", url: "Brats_Arjan_Dhillon.mp3", category: "Punjabi" }
+];
+
+function loadTrack(index) {
+  if (index < 0 || index >= tracks.length) return;
+  current = index;
+  const t = tracks[current];
+  audio.src = t.url;
+  $("trackTitle").textContent = t.title;
+  $("trackArtist").textContent = t.artist || "Unknown Artist";
+  
+  const items = document.querySelectorAll(".track");
+  items.forEach((item) => {
+    const trackIndex = parseInt(item.getAttribute("data-index"));
+    item.classList.toggle("active", trackIndex === current);
+  });
+
+  audio.play().then(() => {
+    $("art").classList.add("spin");
+  }).catch(() => {
+    $("art").classList.remove("spin");
+  });
+}
+
+function renderPlaylist(query = "") {
+  const list = $("tracklist");
+  list.innerHTML = "";  
+  const cleanQuery = query.toLowerCase().trim();
+
+  tracks.forEach((t, i) => {
+    const matchesCategory = (currentCategory === "All" || t.category === currentCategory);
+    const matchesTitle = t.title.toLowerCase().includes(cleanQuery);
+    const matchesArtist = (t.artist || "").toLowerCase().includes(cleanQuery);
+
+    if (matchesCategory && (matchesTitle || matchesArtist)) {
+      const div = document.createElement("div");
+      div.className = "track" + (i === current ? " active" : "");
+      div.setAttribute("data-index", i);
+      div.innerHTML = `
+        <span class="num">${i + 1}</span>
+        <div class="meta">
+          <div class="name">${t.title}</div>
+          <div class="artist">${t.artist || "Unknown Artist"}</div>
+        </div>
+      `;
+      div.onclick = () => loadTrack(i);
+      list.appendChild(div);
+    }
+  });
+
+  if (list.children.length === 0) {
+    list.innerHTML = `<div style="padding: 18px; opacity: 0.5; text-align: center;">No tracks found</div>`;
+  }
+}
+
+// Category Tab Clicks
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    currentCategory = e.target.getAttribute("data-cat");
+    renderPlaylist($("searchInput").value);
+  });
+});
+
+$("searchInput").addEventListener("input", (e) => {
+  renderPlaylist(e.target.value);
+});
+
+$("playBtn").onclick = () => {
+  if (current === -1 && tracks.length > 0) {
+    loadTrack(0);
+    return;
+  }
+  if (audio.paused) {
+    audio.play();
+    $("art").classList.add("spin");
+  } else {
+    audio.pause();
+    $("art").classList.remove("spin");
+  }
+};
+
+$("prevBtn").onclick = () => loadTrack((current - 1 + tracks.length) % tracks.length);
+$("nextBtn").onclick = () => loadTrack((current + 1) % tracks.length);
+$("rewindBtn").onclick = () => audio.currentTime = Math.max(0, audio.currentTime - 10);
+$("forwardBtn").onclick = () => audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+
+audio.ontimeupdate = () => {
+  if (audio.duration) {
+    $("progress").value = (audio.currentTime / audio.duration) * 100;
+    $("time").textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+  }
+};
+
+$("progress").oninput = (e) => {
+  if (audio.duration) {
+    audio.currentTime = (e.target.value / 100) * audio.duration;
+  }
+};
+
+audio.onended = () => loadTrack((current + 1) % tracks.length);
+
+renderPlaylist();
+</script>
+</body>
+</html>
