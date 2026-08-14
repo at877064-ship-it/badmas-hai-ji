@@ -16,7 +16,7 @@
 <style>
 :root{--steel-1:#3a3d40;--steel-2:#1c1e20;--steel-3:#0a0b0c;--amber:#d9a441;--amber-dim:#8a6a2c;--cream:#e9e6df;--line:rgba(233,230,223,.12);--danger:#c0453a}
 html,body{margin:0;min-height:100vh;font-family:'Rajdhani',sans-serif;}
-body{overflow-x:hidden;background:#0d0f12 url('new.bg.jpg.png') center/cover no-repeat fixed;}
+body{overflow-x:hidden;background:#0d0f12 url('new.bg.jpg.png.mp4') center/cover no-repeat fixed;}
 button,input{font:inherit}
 button{color:inherit}
 
@@ -161,10 +161,23 @@ button{color:inherit}
   <div id="lockError"></div><button id="lockBtn">Unlock</button>
 </div>
 
-<div id="scene"><video autoplay muted loop playsinline id="bgVideo"><source src="stock-footage-listening-music-on-old-vinyl-record-spinning-on-vintage-turntable.webm" type="video/webm"></video><div class="fabric"></div><div class="rail" id="rail1"></div><div class="rail" id="rail2"></div>
-<div class="bolt" style="top:20%;left:12%"></div><div class="bolt" style="top:30%;left:85%"></div><div class="bolt" style="bottom:18%;left:20%"></div><div class="bolt" style="bottom:28%;right:16%"></div>
-<div class="vignette"></div><div class="hud-corner tl"></div><div class="hud-corner tr"></div><div class="hud-corner bl"></div><div class="hud-corner br"></div></div>
-
+<div id="scene">
+  <video autoplay muted loop playsinline id="bgVideo">
+    <source src="new.bg.jpg.png.mp4" type="video/mp4">
+  </video>
+  <div class="fabric"></div>
+  <div class="rail" id="rail1"></div>
+  <div class="rail" id="rail2"></div>
+  <div class="bolt" style="top:20%;left:12%"></div>
+  <div class="bolt" style="top:30%;left:85%"></div>
+  <div class="bolt" style="bottom:18%;left:20%"></div>
+  <div class="bolt" style="bottom:28%;right:16%"></div>
+  <div class="vignette"></div>
+  <div class="hud-corner tl"></div>
+  <div class="hud-corner tr"></div>
+  <div class="hud-corner bl"></div>
+  <div class="hud-corner br"></div>
+</div>
 <button id="soundBadge" title="Upload and play a sound">
 <span id="soundIcon"><svg viewBox="0 0 24 24"><path d="M2 13.5h9.5V12H15v-1.2c0-.7.6-1.3 1.3-1.3H19c1.1 0 2 .9 2 2v1c0 .8-.5 1.5-1.2 1.8l-2.3.9v1.3c0 .5-.4 1-1 1H12v1.5c0 .5-.4 1-1 1H8.5v-2.5H6c-.8 0-1.5-.3-2-.9L2 15v-1.5z"/><rect x="10.5" y="9.3" width="2" height="2.7"/></svg></span>
 <span class="soundText"><span class="hi">बदमाश</span><span class="en">BADMAS</span></span>
