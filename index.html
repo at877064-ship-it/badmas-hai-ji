@@ -1125,7 +1125,7 @@ function loadTrack(index) {
   // Dynamic background video switcher for Mobile and Desktop
 function updateBgVideo() {
   const bgVideo = $("bgVideo");
-  const targetSrc = window.innerWidth <= 768 ? "bg.MOBILE.mp4" :" bg.Desktopp.mp4 ";
+  const targetSrc = window.innerWidth <= 768 ? "bg.MOBILE.mp4" :"bg.DesktoP.mp4";
   
   if (!bgVideo.src.endsWith(targetSrc)) {
     bgVideo.src = targetSrc;
