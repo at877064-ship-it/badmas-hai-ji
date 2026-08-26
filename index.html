@@ -421,9 +421,17 @@ function formatTime(s){if(!isFinite(s))return"0:00";s=Math.max(0,Math.floor(s));
 // --- Songs Master Data (Categorized) ---
 const tracks = [
   // Gazal 
+  { title: "Ruposh", artist: "Unknown", url: "Ruposh_sad.mp3", category: "Ghazal" },
+  { title: "Hawayein", artist: "Arijit Singh", url: "Le_Jaaye_Jane_Kaha_Hawayen.mp3", category: "Bollywood" },
+  { title: "Satranga", artist: "Arijit Singh", url: "Satranga_Arijit.mp3", category: "Bollywood" },
+  { title: "Chandi Jaisa Rang Hai Tera", artist: "Pankaj Udhas", url: "Chandi_Jaisa_Rang_Hai_Tera.mp3", category: "Ghazal" },
+  { title: "Aayega Maza Ab Barsaat Ka", artist: "Alka Yagnik, Babul Supriyo", url: "Aayega_Maza_Ab_Barsaat.mp3", category: "Bollywood" },
+  { title: "Zaroori Tha", artist: "Rahat Fateh Ali Khan", url: "Zaroori_Tha.mp3", category: "Ghazal" },
+  { title: "Tujhko Dariyadili Ki Kasam", artist: "Pankaj Udhas", url: "Tujhko_Dariyadili_Ki_Kasam.mp3", category: "Ghazal" },
+  { title: "Phir Se Mausam Bahaaron Ka", artist: "Pankaj Udhas", url: "Phir_Se_Mausam_Bahaaron.mp3", category: "Ghazal" },
   { title: "NO SNITCHING", artist: "Unknown", url: "NO_SNITCHING.mp3", category: "Hip-hop" },
   { title: "Khabbay Sajjay", artist: "Unknown", url: "Khabbay_Sajjay.mp3", category: "Bollywood" },
-  {title:"Rafta Rafta",artist:"Unknown", url:"Rafta_Rafta_Wo_Meri.mp3",category:"Gazal"},
+  { title:"Rafta Rafta",artist:"Unknown", url:"Rafta_Rafta_Wo_Meri.mp3",category:"Gazal"},
   { title: "Dhol Jageero Da", artist: "Unknown", url: "Dhol_Jageero_Da.mp3", category: "Punjabi" },
   { title: "Legend", artist: "Unknown", url: "Legend.mp3", category: "Punjabi" },
   { title: "Tibeyan Da Putt", artist: "Unknown", url: "Tibeyan_Da_Putt.mp3", category: "Punjabi" },
@@ -497,7 +505,7 @@ const tracks = [
   { title: "Varoon", artist: "Unknown", url: "Varoon.mp3", category: "Bollywood" },
   { title: "Do Numbari Dhandha", artist: "Unknown", url: "Do_Numbari_Dhandha.mp3", category: "Bollywood" },
   { title: "Rang Jo Lagyo", artist: "Atif Aslam, Shreya Ghoshal", url: "Rang_Jo_Lagyo.mp3", category: "Bollywood" },
-  {title:  "Cheli",artist:"Taau", url:"Cheli.mp3",category:"Haryanavi"},
+  { title:  "Cheli",artist:"Taau", url:"Cheli.mp3",category:"Haryanavi"},
   { title: "Boom Shaka",artist:"Krsna",url:"boom_shaka.mp3", category:"Hip-Hop"},
   { title: "Pittal Pittal",artist:"rana brass",url:"Pittal_Pittal_rana_brass.mp3",category:"Haryanavi"},
   { title: "Taau Badmos",artist:"Taau",url:"Taau.mp3",category:"Haryanavi"},
